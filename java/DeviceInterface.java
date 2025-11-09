@@ -4,4 +4,5 @@ public interface DeviceInterface {
     // connect function
 
     // fileIO wrapping function for prettyifying stuff- particularly for whatever format the RP2050 accepts.
+
 }
