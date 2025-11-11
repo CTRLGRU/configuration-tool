@@ -22,5 +22,7 @@ abstract class Component implements ModuleInterface, DeviceInterface{
     //DeviceInterface functions, ex:
 
     //public int FileIoHandler()
-
+    public int fileWriter(Module module, int ID){
+        return 0;
+    }
 }
