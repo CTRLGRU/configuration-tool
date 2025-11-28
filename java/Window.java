@@ -1,7 +1,5 @@
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.io.*;
 import java.awt.event.*;
 // Window Class - this is where making variable instantiations of windows should be allowed to be created!
 
@@ -14,7 +12,8 @@ public class Window extends JFrame implements ViewInterface, Runnable{
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         //Panel inside the window
-        contentPanel = new JPanel();
+        String currentDirectory = System.getProperty("user.dir"); //this may get squashed to one line in the future.
+        contentPanel = new BackgroundPanel(currentDirectory+"/assets/bg.jpg");
         add(contentPanel, BorderLayout.CENTER);
         //This is where components of the panel go, it should be a sub-panel instantiation of it
         //Below is the main controls (middle)
@@ -96,9 +95,56 @@ public class Window extends JFrame implements ViewInterface, Runnable{
                 contentPanel.repaint();
             }
         });
+        setJMenuBar(menuBar);
+        String[] modulesD1 = {"Joystick", "DPad", "ABXY"};
+        //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations. 
+        JComboBox<String> dropdown1 = new JComboBox<>(modulesD1);
+        contentPanel.add(dropdown1, BorderLayout.SOUTH);
+        dropdown1.addActionListener(new ActionListener() {
+           @Override
+           public void actionPerformed(ActionEvent e) {
+               String selection1 = (String) dropdown1.getSelectedItem();
+               System.out.println(selection1);
+               //Switch; Case; here.
+           }
+        });
+
+        JComboBox<String> dropdown2 = new JComboBox<>(modulesD1);
+        contentPanel.add(dropdown2, BorderLayout.SOUTH);
+        dropdown2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String selection2 = (String) dropdown2.getSelectedItem();
+                System.out.println(selection2);
+                //Switch; Case; here.
+            }
+        });
+
+        JComboBox<String> dropdown3 = new JComboBox<>(modulesD1);
+        contentPanel.add(dropdown3, BorderLayout.SOUTH);
+        dropdown3.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String selection3 = (String) dropdown3.getSelectedItem();
+                System.out.println(selection3);
+                //Switch; Case; here.
+            }
+        });
+
+        JComboBox<String> dropdown4 = new JComboBox<>(modulesD1);
+        contentPanel.add(dropdown4, BorderLayout.SOUTH);
+        dropdown4.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String selection4 = (String) dropdown4.getSelectedItem();
+                System.out.println(selection4);
+                //Switch; Case; here.
+            }
+        });
+
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
-        setJMenuBar(menuBar);
+        setContentPane(contentPanel);
         pack();
         setVisible(true);
     }
