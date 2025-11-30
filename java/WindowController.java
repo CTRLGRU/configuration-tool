@@ -1,14 +1,17 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Arrays;
 // Window Class - this is where making variable instantiations of windows should be allowed to be created!
 
-public class Window extends JFrame implements ViewInterface, Runnable{
+public class WindowController extends JFrame implements ViewInterface, Runnable{
     private JPanel contentPanel;
+    private Controller Pcontroller;
     public String version = "0.1.0a";
 
-    public Window(){
+    public WindowController(Controller controller){
         super("Controller Window");
+        this.Pcontroller = controller;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         //Panel inside the window
@@ -96,7 +99,7 @@ public class Window extends JFrame implements ViewInterface, Runnable{
             }
         });
         setJMenuBar(menuBar);
-        String[] modulesD1 = {"Joystick", "DPad", "ABXY"};
+        String[] modulesD1 = {" ","Joystick", "DPad", "ABXY"};
         //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations. 
         JComboBox<String> dropdown1 = new JComboBox<>(modulesD1);
         contentPanel.add(dropdown1, BorderLayout.SOUTH);
@@ -104,8 +107,28 @@ public class Window extends JFrame implements ViewInterface, Runnable{
            @Override
            public void actionPerformed(ActionEvent e) {
                String selection1 = (String) dropdown1.getSelectedItem();
-               System.out.println(selection1);
-               //Switch; Case; here.
+               try {
+                   switch (selection1) {
+                       case "Joystick":
+                           Pcontroller.setModule1(2,0,"Joystick");
+                           break;
+                       case "DPad":
+                           Pcontroller.setModule1(0,4,"DPad");
+                           break;
+                       case "ABXY":
+                           Pcontroller.setModule1(0,4,"ABXY");
+                           break;
+                       case null:
+                           throw new NullPointerException("NULL ARGUMENT IN DROPDOWN MENU");
+                           //break;
+                           //apparently you can't get here?
+                       default:
+                           JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
+                           break;
+                   }
+               } catch (Exception ex) {
+                   ex.printStackTrace();
+               }
            }
         });
 
@@ -115,8 +138,27 @@ public class Window extends JFrame implements ViewInterface, Runnable{
             @Override
             public void actionPerformed(ActionEvent e) {
                 String selection2 = (String) dropdown2.getSelectedItem();
-                System.out.println(selection2);
-                //Switch; Case; here.
+                try {
+                    switch (selection2) {
+                        case "Joystick":
+                            Pcontroller.setModule2(2,0,"Joystick");
+                            break;
+                        case "DPad":
+                            Pcontroller.setModule2(0,4,"DPad");
+                            break;
+                        case "ABXY":
+                            Pcontroller.setModule2(0,4,"ABXY");
+                            break;
+                        case null:
+                            throw new NullPointerException("NULL ARGUMENT IN DROPDOWN MENU");
+                            //break;
+                        default:
+                            JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
+                            break;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         });
 
@@ -126,8 +168,27 @@ public class Window extends JFrame implements ViewInterface, Runnable{
             @Override
             public void actionPerformed(ActionEvent e) {
                 String selection3 = (String) dropdown3.getSelectedItem();
-                System.out.println(selection3);
-                //Switch; Case; here.
+                try {
+                    switch (selection3) {
+                        case "Joystick":
+                            Pcontroller.setModule3(2,0,"Joystick");
+                            break;
+                        case "DPad":
+                            Pcontroller.setModule3(0,4,"DPad");
+                            break;
+                        case "ABXY":
+                            Pcontroller.setModule3(0,4,"ABXY");
+                            break;
+                        case null:
+                            throw new NullPointerException("NULL ARGUMENT IN DROPDOWN MENU");
+                            //break;
+                        default:
+                            JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
+                            break;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         });
 
@@ -137,11 +198,31 @@ public class Window extends JFrame implements ViewInterface, Runnable{
             @Override
             public void actionPerformed(ActionEvent e) {
                 String selection4 = (String) dropdown4.getSelectedItem();
-                System.out.println(selection4);
-                //Switch; Case; here.
+                try {
+                    switch (selection4) {
+                        case "Joystick":
+                            Pcontroller.setModule4(2,0,"Joystick");
+                            break;
+                        case "DPad":
+                            Pcontroller.setModule4(0,4,"DPad");
+                            break;
+                        case "ABXY":
+                            Pcontroller.setModule4(0,4,"ABXY");
+                            break;
+                        case null:
+                            throw new NullPointerException("NULL ARGUMENT IN DROPDOWN MENU");
+                            //break;
+                        default:
+                            JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
+                            break;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                //leaving this here for testing!! REMOVE IN PRODUCTION!!
+                //System.out.println(Arrays.toString(Pcontroller.getModulesFileWriter()));
             }
         });
-
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
         setContentPane(contentPanel);
