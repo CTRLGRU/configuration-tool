@@ -6,5 +6,7 @@ public interface ModuleInterface {
     public int getAxes();
     public void setAxes(int axes); //this could be shortened to Bool (not bool) since it is a tri state type
     //it's a start
+    public int getModuleNumber();
+    public void setModuleNumber(int moduleNumber);
     public boolean initialization(); //an initialization routine for a module, such as using the above getters and setters.
 }
