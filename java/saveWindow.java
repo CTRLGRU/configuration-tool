@@ -3,9 +3,10 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class saveWindow{
-    public saveWindow(String windowTextArg) {
+    public saveWindow(String windowTextArg, Controller sController) {
         JFrame saveFileFrame = new JFrame(windowTextArg);
         saveFileFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         saveFileFrame.setLocationRelativeTo(null);
@@ -26,7 +27,10 @@ public class saveWindow{
                 file = new File(filePath);
             }
             try(FileWriter writer = new FileWriter(file)){
-                writer.write("Test Formatting construct, content should be passed in here from Component");
+                if(sController.returnModule1State() == 0 || sController.returnModule2State() == 0 || sController.returnModule3State() == 0 || sController.returnModule4State() == 0){
+                    throw new IOException("Error saving file! File contains unpopulated module.");
+                }
+                writer.write(Arrays.toString(sController.getModulesFileWriter()));
                 JOptionPane.showMessageDialog(saveFileFrame, "File saved successfully to" + filePath);
             }
             catch (IOException e){
