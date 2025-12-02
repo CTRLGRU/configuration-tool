@@ -49,11 +49,11 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // SAVE MENU
         JMenuItem saveMenuItem = new JMenuItem("Save");
         saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
-        saveMenuItem.addActionListener(e -> new saveWindow("Save...")); // Save functionality, and so on. Look for the e-> listener.
+        saveMenuItem.addActionListener(e -> new saveWindow("Save...", Pcontroller)); // Save functionality, and so on. Look for the e-> listener.
         fileMenu.add(saveMenuItem);
         // SAVE AS MENU
         JMenuItem saveAsMenuItem = new JMenuItem("Save As");
-        saveAsMenuItem.addActionListener(e -> new saveWindow("Save As..."));
+        saveAsMenuItem.addActionListener(e -> new saveWindow("Save As...", Pcontroller));
         fileMenu.add(saveAsMenuItem);
         // EXIT MENU
         JMenuItem exitMenuItem = new JMenuItem("Exit");

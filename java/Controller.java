@@ -47,6 +47,22 @@ public class Controller extends Component{
         Module4.setModuleNumber(4);
     }
 
+    public int returnModule1State(){
+        return Module1.getModuleNumber()+Module1.getButtonQty()+Module1.getAxes();
+    }
+
+    public int returnModule2State(){
+        return Module2.getModuleNumber()+Module2.getButtonQty()+Module2.getAxes();
+    }
+
+    public int returnModule3State(){
+        return Module3.getModuleNumber()+Module3.getButtonQty()+Module3.getAxes();
+    }
+
+    public int returnModule4State(){
+        return Module4.getModuleNumber()+Module4.getButtonQty()+Module4.getAxes();
+    }
+
     // side rant: the fact IntelliJ says "linter" is redundant, but without it being explicitly initialized it complains about it not
     // being initialized! Why!?
     public String[] getModulesFileWriter(){
