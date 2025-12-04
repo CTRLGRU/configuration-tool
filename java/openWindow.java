@@ -46,7 +46,7 @@ public class openWindow{
                     attribute %= 3;
                 } else if (c == '\n' || c == ',' || c == ' ') {
                 } else {
-                    data[module][attribute] = (int) c - '0';
+                    data[module - 1][attribute] = (int) c - '0';
                 }
                 r = reader.read();
                 c = (char) r;
