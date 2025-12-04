@@ -44,7 +44,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // OPEN MENU
         JMenuItem openMenuItem = new JMenuItem("Open");
         openMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
-        openMenuItem.addActionListener(e -> new openWindow()); //Where you add the OPEN functionality
+        openMenuItem.addActionListener(e -> new openWindow(this)); //Where you add the OPEN functionality
         fileMenu.add(openMenuItem);
         // SAVE MENU
         JMenuItem saveMenuItem = new JMenuItem("Save");
@@ -232,5 +232,36 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
 
     public void run(){
         //should be overridden
+    }
+
+    public void setModules(char[] modules, int[][] data) {
+        String name = null;
+        for (int i = 0; i < 4; i++) {
+            switch (modules[i]) {
+                case 'J':
+                    name = "Joystick";
+                    break;
+                case 'B':
+                    name = "ABXY";
+                    break;
+                default:
+                    name = "null";
+            }
+            switch (data[i][2]) {
+                case 1:
+                    Pcontroller.setModule1(data[i][0], data[i][1], name);
+                    break;
+                case 2:
+                    Pcontroller.setModule2(data[i][0], data[i][1], name);
+                    break;
+                case 3:
+                    Pcontroller.setModule3(data[i][0], data[i][1], name);
+                    break;
+                case 4:
+                    Pcontroller.setModule4(data[i][0], data[i][1], name);
+                    break;
+                default:
+            }
+        }
     }
 }
