@@ -20,7 +20,8 @@ public class openWindow{
             // So, each module can be represented by 1 byte, where 'J'/'B'/'X' corresponds to joystick/4-button/unknown
             // Presumably, ABXY and the D-pad are programmatically equivalent
             int[][] data = parseConfig(file);
-            parent.setModules(parseData(data), data);
+            char[] modules = parseData(data);
+            parent.setModules(modules, data);
         }
         else {
             JOptionPane.showMessageDialog(openFrame, "Cancelled Operation", "Open Window", JOptionPane.ERROR_MESSAGE);
@@ -38,14 +39,13 @@ public class openWindow{
             boolean valid = (c == '[');
             byte module = 0;
             byte attribute = 0;
-            while (valid && r != -1 && c != ']') {
-                if (c == '=') {
+            while (valid && r != -1 && c != ']') { // First char is '[', no read error, no ']' reached
+                if (c == '=') { // New module delimiter
                     module++;
-                } else if (c == ':') {
+                } else if (c == ':') { // New piece of data delimiter
                     attribute++;
                     attribute %= 3;
-                } else if (c == '\n' || c == ',' || c == ' ') {
-                } else {
+                } else if (c != '\n' && c != ',' && c != ' ' && c != '[') { // Anything meaningful that's left (digits)
                     data[module - 1][attribute] = (int) c - '0';
                 }
                 r = reader.read();
@@ -67,6 +67,7 @@ public class openWindow{
             if (data[i][1] == 2) {
                 modules[data[i][2]] = 'J';
             } else if (data[i][0] == 4) {
+                // Currently no way to differentiate Dpad and ABXY (4 button, 0 axes)
                 modules[data[i][2]] = 'B';
             } else {
                 modules[data[i][2]] = 'X';
