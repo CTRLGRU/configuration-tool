@@ -1,12 +1,15 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import java.io.IOException;
 import java.net.http.*;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class HttpController {
     private final HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
     private HttpRequest.Builder reqBuilder = HttpRequest.newBuilder();
-    private HttpRequest req;
     private HttpResponse<String> resp;
 
     public HttpController() {}
@@ -27,15 +30,7 @@ public class HttpController {
         reqBuilder = newReqBuilder;
     }
 
-    public HttpRequest getRequest() {
-        return req;
-    }
-
-    public void setRequest(HttpRequest newReq) {
-        req = newReq;
-    }
-
-    public void resetRequestBuilder() {
+    public void resetRequestData() {
         reqBuilder = HttpRequest.newBuilder();
     }
 
@@ -47,11 +42,22 @@ public class HttpController {
         reqBuilder.setHeader(key, value);
     }
 
-    public void makeRequest(HttpRequest request) {
+    public HttpResponse<Path> makeFileRequest(HttpRequest request, String filePath) {
+        Path target = Paths.get(filePath);
         try {
-            resp = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return client.send(request, HttpResponse.BodyHandlers.ofFile(target));
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
+        }
+    }
+
+    public HttpResponse<String> makeStringRequest(HttpRequest request) {
+        try {
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
