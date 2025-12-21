@@ -65,12 +65,12 @@ public class openWindow{
                 continue;
             }
             if (data[i][1] == 2) {
-                modules[data[i][2]] = 'J';
+                modules[data[i][2] - 1] = 'J';
             } else if (data[i][0] == 4) {
                 // Currently no way to differentiate Dpad and ABXY (4 button, 0 axes)
-                modules[data[i][2]] = 'B';
+                modules[data[i][2] - 1] = 'B';
             } else {
-                modules[data[i][2]] = 'X';
+                modules[data[i][2] - 1] = 'X';
             }
         }
         return modules;

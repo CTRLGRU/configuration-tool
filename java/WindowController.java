@@ -7,6 +7,10 @@ import java.util.Arrays;
 public class WindowController extends JFrame implements ViewInterface, Runnable{
     private JPanel contentPanel;
     private Controller Pcontroller;
+    private JComboBox<String> dropdown1;
+    private JComboBox<String> dropdown2;
+    private JComboBox<String> dropdown3;
+    private JComboBox<String> dropdown4;
     public String version = "0.1.0a";
 
     public WindowController(Controller controller){
@@ -101,7 +105,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         setJMenuBar(menuBar);
         String[] modulesD1 = {" ","Joystick", "DPad", "ABXY"};
         //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations. 
-        JComboBox<String> dropdown1 = new JComboBox<>(modulesD1);
+        dropdown1 = new JComboBox<String>(modulesD1);
         contentPanel.add(dropdown1, BorderLayout.SOUTH);
         dropdown1.addActionListener(new ActionListener() {
            @Override
@@ -132,7 +136,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
            }
         });
 
-        JComboBox<String> dropdown2 = new JComboBox<>(modulesD1);
+        dropdown2 = new JComboBox<String>(modulesD1);
         contentPanel.add(dropdown2, BorderLayout.SOUTH);
         dropdown2.addActionListener(new ActionListener() {
             @Override
@@ -162,7 +166,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
             }
         });
 
-        JComboBox<String> dropdown3 = new JComboBox<>(modulesD1);
+        dropdown3 = new JComboBox<String>(modulesD1);
         contentPanel.add(dropdown3, BorderLayout.SOUTH);
         dropdown3.addActionListener(new ActionListener() {
             @Override
@@ -192,7 +196,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
             }
         });
 
-        JComboBox<String> dropdown4 = new JComboBox<>(modulesD1);
+        dropdown4 = new JComboBox<String>(modulesD1);
         contentPanel.add(dropdown4, BorderLayout.SOUTH);
         dropdown4.addActionListener(new ActionListener() {
             @Override
@@ -245,20 +249,24 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     name = "ABXY";
                     break;
                 default:
-                    name = "null";
+                    name = " ";
             }
             switch (data[i][2]) {
                 case 1:
-                    Pcontroller.setModule1(data[i][0], data[i][1], name);
+                    Pcontroller.setModule1(data[i][1], data[i][0], name);
+                    dropdown1.setSelectedItem(name);
                     break;
                 case 2:
-                    Pcontroller.setModule2(data[i][0], data[i][1], name);
+                    Pcontroller.setModule2(data[i][1], data[i][0], name);
+                    dropdown2.setSelectedItem(name);
                     break;
                 case 3:
-                    Pcontroller.setModule3(data[i][0], data[i][1], name);
+                    Pcontroller.setModule3(data[i][1], data[i][0], name);
+                    dropdown3.setSelectedItem(name);
                     break;
                 case 4:
-                    Pcontroller.setModule4(data[i][0], data[i][1], name);
+                    Pcontroller.setModule4(data[i][1], data[i][0], name);
+                    dropdown4.setSelectedItem(name);
                     break;
                 default:
             }
