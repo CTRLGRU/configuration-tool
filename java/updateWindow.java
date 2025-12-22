@@ -5,13 +5,13 @@ import java.awt.*;
 import java.io.IOException;
 
 public class updateWindow extends JFrame{
-    private JFrame contentPanel = new JFrame("Update Window");
-    private HttpController http = new HttpController();
+    private final JFrame contentPanel = new JFrame("Update Window");
+    private final HttpController http = new HttpController();
 
     public updateWindow(String version) {
         /*For this there should be three steps: first open a window and let the user know it's checking for updates
          * Then it should actually do the logic of if no updates available, then display so with text, and an OK box
-         * IF THERE IS, then it should transition the box to "an update is available (current ver. xx.xx -> new ver xx.xx)
+         * IF THERE IS, then it should transition the box to "an update is available (current ver. xx.xx -> new ver xx.xx)"
          * and then have an "ok" or "cancel" with "update"
          * */
         contentPanel.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -27,14 +27,13 @@ public class updateWindow extends JFrame{
 
         // Make a REST API request for the latest release, then parse the tag name
         // Technically users not using any auth tokens are limited to 60 calls per hour
-        HttpController requester = new HttpController();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = null;
         String newVersion = version;
         try {
             root = mapper.readTree(
-                requester.makeStringRequest(
-                    requester.fromGitHub("https://api.github.com/repos/CTRLGRU/configuration-tool/releases/latest", "GET", null, null)
+                http.makeStringRequest(
+                    http.fromGitHub("https://api.github.com/repos/CTRLGRU/configuration-tool/releases/latest", "GET", null, null)
                 ).body()
             );
             JsonNode tag = root.get("tag_name");
@@ -57,10 +56,10 @@ public class updateWindow extends JFrame{
             updatePanel.add(okButton, BorderLayout.SOUTH);
         } else {
             JLabel updateFound = new JLabel("An update is available: " + version + " -> " + newVersion + ".", SwingConstants.CENTER);
-            JLabel updated = new JLabel("Successfully updated to the most recent version.\nRestart the application for it to take effect.", SwingConstants.CENTER);
+            JLabel updated = new JLabel("<html>Successfully updated to the most recent version.<br><br>Restart the application for it to take effect.</html>", SwingConstants.CENTER);
             JButton updateButton = new JButton("Update");
             final JsonNode workingRoot = root;
-            updateButton.addActionListener(e -> attemptUpdate(updatePanel, updated, okButton, workingRoot, requester));
+            updateButton.addActionListener(e -> attemptUpdate(updatePanel, updated, okButton, workingRoot));
             JButton cancelButton = new JButton("Cancel");
             cancelButton.addActionListener(e -> contentPanel.dispose());
             updatePanel.add(updateFound, BorderLayout.NORTH);
@@ -71,15 +70,15 @@ public class updateWindow extends JFrame{
         updatePanel.repaint();
     }
 
-    private void attemptUpdate(JPanel panel, JLabel label, JButton button, JsonNode root, HttpController requester) {
+    private void attemptUpdate(JPanel panel, JLabel label, JButton button, JsonNode root) {
         String url = null;
         if (root.path("assets").isArray()) {
             url = root.get("assets").get(0).get("browser_download_url").asText();
         }
-        requester.resetRequestData();
-        requester.setHeader("Accept", "application/octet-stream");
-        requester.makeFileRequest(
-            requester.fromURL(url, "GET", null),
+        http.resetRequestData();
+        http.setHeader("Accept", "application/octet-stream");
+        http.makeFileRequest(
+            http.fromURL(url, "GET", null),
             "configuration-tool.jar"
         );
         panel.removeAll();
