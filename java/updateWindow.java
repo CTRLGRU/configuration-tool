@@ -3,7 +3,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
-import java.io.File;
 
 public class updateWindow extends JFrame{
     private JFrame contentPanel = new JFrame("Update Window");
@@ -21,9 +20,9 @@ public class updateWindow extends JFrame{
         contentPanel.setSize(500, 150);
         JPanel updatePanel = new JPanel();
         updatePanel.setBackground(Color.LIGHT_GRAY);
+        contentPanel.setContentPane(updatePanel);
         JLabel updating = new JLabel("Searching for updates...", SwingConstants.CENTER);
         updatePanel.add(updating, BorderLayout.CENTER);
-        contentPanel.add(updatePanel, BorderLayout.CENTER);
         contentPanel.setVisible(true);
 
         // Make a REST API request for the latest release, then parse the tag name
@@ -35,7 +34,7 @@ public class updateWindow extends JFrame{
         try {
             root = mapper.readTree(
                 requester.makeStringRequest(
-                    requester.fromGitHub("https://api.github.com/repos/femortix/Femotech/releases/latest", "GET", null, null)
+                    requester.fromGitHub("https://api.github.com/repos/CTRLGRU/configuration-tool/releases/latest", "GET", null, null)
                 ).body()
             );
             JsonNode tag = root.get("tag_name");
@@ -47,37 +46,46 @@ public class updateWindow extends JFrame{
         }
 
         // Determine if an update was found; failure to read results in no update found.
-        contentPanel.remove(updating);
+        updatePanel.remove(updating);
+        updatePanel.revalidate();
+        updatePanel.repaint();
+        JButton okButton = new JButton("OK");
+        okButton.addActionListener(e -> contentPanel.dispose());
         if (version.equals(newVersion)) {
             JLabel noUpdateFound = new JLabel("There were no found available updates. Current version is " + version + ".", SwingConstants.CENTER);
-            JButton okButton = new JButton("OK");
-            okButton.addActionListener(e -> contentPanel.dispose());
-            contentPanel.add(noUpdateFound, BorderLayout.NORTH);
-            contentPanel.add(okButton, BorderLayout.SOUTH);
+            updatePanel.add(noUpdateFound, BorderLayout.NORTH);
+            updatePanel.add(okButton, BorderLayout.SOUTH);
         } else {
             JLabel updateFound = new JLabel("An update is available: " + version + " -> " + newVersion + ".", SwingConstants.CENTER);
+            JLabel updated = new JLabel("Successfully updated to the most recent version.\nRestart the application for it to take effect.", SwingConstants.CENTER);
             JButton updateButton = new JButton("Update");
             final JsonNode workingRoot = root;
-            updateButton.addActionListener(e -> attemptUpdate(workingRoot, requester));
+            updateButton.addActionListener(e -> attemptUpdate(updatePanel, updated, okButton, workingRoot, requester));
             JButton cancelButton = new JButton("Cancel");
             cancelButton.addActionListener(e -> contentPanel.dispose());
-            contentPanel.add(updateFound, BorderLayout.NORTH);
-            contentPanel.add(updateButton, BorderLayout.WEST);
-            contentPanel.add(cancelButton, BorderLayout.EAST);
+            updatePanel.add(updateFound, BorderLayout.NORTH);
+            updatePanel.add(updateButton, BorderLayout.SOUTH);
+            updatePanel.add(cancelButton, BorderLayout.SOUTH);
         }
+        updatePanel.revalidate();
+        updatePanel.repaint();
     }
 
-    private void attemptUpdate(JsonNode root, HttpController requester) {
+    private void attemptUpdate(JPanel panel, JLabel label, JButton button, JsonNode root, HttpController requester) {
         String url = null;
         if (root.path("assets").isArray()) {
             url = root.get("assets").get(0).get("browser_download_url").asText();
         }
         requester.resetRequestData();
         requester.setHeader("Accept", "application/octet-stream");
-        System.out.println(System.getProperty("user.dir") + File.separator + "Downloads" + File.separator + "configuration-tool.jar");
         requester.makeFileRequest(
             requester.fromURL(url, "GET", null),
-            System.getProperty("user.dir") + File.separator + "Downloads" + File.separator + "configuration-tool.jar"
+            "configuration-tool.jar"
         );
+        panel.removeAll();
+        panel.add(label, BorderLayout.CENTER);
+        panel.add(button, BorderLayout.SOUTH);
+        panel.revalidate();
+        panel.repaint();
     }
 }
