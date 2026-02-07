@@ -1,14 +1,25 @@
 import com.fazecast.jSerialComm.*;
 
-public class USBController {
+public abstract class USBController {
     private static SerialPort port;
+    private static byte[] buffer;
 
     public static boolean close() {
         return port.closePort();
     }
 
-    public static SerialPort[] scan() {
-        return SerialPort.getCommPorts();
+    public static void initialize(int bufferSize, String name, int baud, int stopBits, int parity) {
+        buffer = new byte[bufferSize];
+        USBController.open(name, baud, stopBits, parity);
+    }
+
+    public static void initialize(int bufferSize, String name, int baud) {
+        buffer = new byte[bufferSize];
+        USBController.open(name, baud);
+    }
+
+    public static void initialize(int bufferSize) {
+        buffer = new byte[bufferSize];
     }
 
     public static boolean open(String name, int baud, int stopBits, int parity) {
@@ -20,8 +31,8 @@ public class USBController {
             parity
         );
         port.setComPortTimeouts(
-            SerialPort.TIMEOUT_WRITE_BLOCKING,
-            0,
+            SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING,
+            1000,
             0
         );
 
@@ -37,12 +48,20 @@ public class USBController {
             SerialPort.EVEN_PARITY
         );
         port.setComPortTimeouts(
-            SerialPort.TIMEOUT_WRITE_BLOCKING,
-            0,
+            SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING,
+            1000,
             0
         );
 
         return port.openPort();
+    }
+
+    public static boolean readBytes(byte[] buffer, int bytes) {
+        return bytes == port.readBytes(buffer, Math.min(bytes, buffer.length));
+    }
+
+    public static SerialPort[] scan() {
+        return SerialPort.getCommPorts();
     }
 
     public static boolean writeBytes(byte[] data, int byteRate) {
@@ -58,7 +77,7 @@ public class USBController {
             // Create a new chunk with remaining bytes or max bytes per 100 ms
             byte[] chunk = new byte[Math.min(byteRate / 10, data.length - progress)];
             System.arraycopy(data, progress, chunk, 0, chunk.length);
-            if (!sendBytes(chunk)) {
+            if (chunk.length != port.writeBytes(chunk, chunk.length)) {
                 return false;
             }
             progress += chunk.length;
@@ -70,12 +89,5 @@ public class USBController {
             }
         }
         return true;
-    }
-
-    private static boolean sendBytes(byte[] data) {
-        if (port == null || !port.isOpen()) {
-            return false;
-        }
-        return data.length == port.writeBytes(data, data.length);
     }
 }
