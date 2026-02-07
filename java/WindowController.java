@@ -1,3 +1,5 @@
+import com.fazecast.jSerialComm.SerialPort;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -11,11 +13,12 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
     private JComboBox<String> dropdown2;
     private JComboBox<String> dropdown3;
     private JComboBox<String> dropdown4;
-    public String version = "0.1.2a";
+    public String version = "0.2.0";
 
     public WindowController(Controller controller){
         super("Controller Window");
         this.Pcontroller = controller;
+        USBController.initialize(1024);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         //Panel inside the window
@@ -38,6 +41,9 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         JMenu optionMenu = new JMenu("Options");
         optionMenu.setMnemonic(KeyEvent.VK_O);
         menuBar.add(optionMenu);
+        JMenu deviceMenu = new JMenu("Devices");
+        optionMenu.setMnemonic(KeyEvent.VK_D);
+        menuBar.add(deviceMenu);
         //menu bar sub items
         // FILE MENU SUB ITEMS
         // NEW MENU
@@ -95,6 +101,17 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         JMenuItem aboutMenuItem = new JMenuItem("About");
         aboutMenuItem.addActionListener(e -> new aboutWindow(version));
         optionMenu.add(aboutMenuItem);
+        // DEVICE MENU SUB ITEMS
+        SerialPort[] ports = SerialPort.getCommPorts();
+        for (SerialPort port : ports) {
+            JMenuItem item = new JMenuItem(port.getDescriptivePortName());
+            item.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    USBController.open(port.getSystemPortName(), 9600);
+                }
+            });
+            deviceMenu.add(item);
+        }
         //Once we have our panels set, we add a component listener
         contentPanel.addComponentListener(new ComponentAdapter() {
             @Override
