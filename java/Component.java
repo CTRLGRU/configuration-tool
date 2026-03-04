@@ -1,15 +1,14 @@
 // Component Abstract Base Class - an ABC that ensures composition of Module and Device are enforced for
 // instantiations of Component subclasses. This also allows us to make sure that Device's toFile function are done
 // with enough cohesion to export and make work on the controller.
-class Component implements ModuleInterface, DeviceInterface{
-    public ModuleInterface module;
-
+public class Component implements ModuleInterface {
     private String name;
     private String description;
     private int ButtonQty;
     private int Axes;
     private int ModuleNumber;
-    //public method, vars of ModuleInterface
+
+    // ModuleInterface implementations
     public int getButtonQty(){
         return ButtonQty;
     };
@@ -64,10 +63,4 @@ class Component implements ModuleInterface, DeviceInterface{
         description = "null";
         return true;
     };
-    //DeviceInterface functions, ex:
-
-    //public int FileIoHandler()
-    public String fileWriter(Component module, int ID){
-        return "="+module.getButtonQty()+":"+module.getAxes()+":"+module.getModuleNumber()+":\n";
-    }
 }

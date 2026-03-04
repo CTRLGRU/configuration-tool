@@ -4,5 +4,5 @@ public interface DeviceInterface {
     // connect function
 
     // fileIO wrapping function for prettyifying stuff- particularly for whatever format the RP2050 accepts.
-    public String fileWriter(Component module, int ID);
+    public String fileWriter(int ID);
 }

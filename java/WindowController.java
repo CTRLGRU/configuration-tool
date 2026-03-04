@@ -13,7 +13,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
     private JComboBox<String> dropdown2;
     private JComboBox<String> dropdown3;
     private JComboBox<String> dropdown4;
-    public String version = "0.2.0";
+    public String version = "0.1.0";
 
     public WindowController(Controller controller){
         super("Controller Window");
