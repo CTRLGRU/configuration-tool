@@ -3,27 +3,25 @@ import com.fazecast.jSerialComm.SerialPort;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Arrays;
-// Window Class - this is where making variable instantiations of windows should be allowed to be created!
+import java.util.List;
+import java.util.ArrayList;
 
+// Window Class - this is where making variable instantiations of windows should be allowed to be created!
 public class WindowController extends JFrame implements ViewInterface, Runnable{
-    private JPanel contentPanel;
+    private JPanel contentPanel = new BackgroundPanel(System.getProperty("user.dir")+"/assets/bg.jpg");
     private Controller Pcontroller;
-    private JComboBox<String> dropdown1;
-    private JComboBox<String> dropdown2;
-    private JComboBox<String> dropdown3;
-    private JComboBox<String> dropdown4;
-    public String version = "0.1.0";
+    private List<JComboBox<String>> dropdowns;
+    public String version = "0.2.0";
 
     public WindowController(Controller controller){
         super("Controller Window");
-        this.Pcontroller = controller;
+        Pcontroller = controller;
+        dropdowns = new ArrayList<JComboBox<String>>(controller.getModuleCount());
         USBController.initialize(1024);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+
         //Panel inside the window
-        String currentDirectory = System.getProperty("user.dir"); //this may get squashed to one line in the future.
-        contentPanel = new BackgroundPanel(currentDirectory+"/assets/bg.jpg");
         add(contentPanel, BorderLayout.CENTER);
         //This is where components of the panel go, it should be a sub-panel instantiation of it
         //Below is the main controls (middle)
@@ -102,7 +100,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         aboutMenuItem.addActionListener(e -> new aboutWindow(version));
         optionMenu.add(aboutMenuItem);
         // DEVICE MENU SUB ITEMS
-        SerialPort[] ports = SerialPort.getCommPorts();
+        SerialPort[] ports = USBController.scan();
         for (SerialPort port : ports) {
             JMenuItem item = new JMenuItem(port.getDescriptivePortName());
             item.addActionListener(new ActionListener() {
@@ -121,129 +119,47 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         });
         setJMenuBar(menuBar);
         String[] modulesD1 = {" ","Joystick", "DPad", "ABXY"};
-        //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations. 
-        dropdown1 = new JComboBox<String>(modulesD1);
-        contentPanel.add(dropdown1, BorderLayout.SOUTH);
-        dropdown1.addActionListener(new ActionListener() {
-           @Override
-           public void actionPerformed(ActionEvent e) {
-               String selection1 = (String) dropdown1.getSelectedItem();
-               try {
-                   switch (selection1) {
-                       case "Joystick":
-                           Pcontroller.setModule1(2,0,"Joystick");
-                           break;
-                       case "DPad":
-                           Pcontroller.setModule1(0,4,"DPad");
-                           break;
-                       case "ABXY":
-                           Pcontroller.setModule1(0,4,"ABXY");
-                           break;
-                       case null:
-                           throw new NullPointerException("NULL ARGUMENT IN DROPDOWN MENU");
-                           //break;
-                           //apparently you can't get here?
-                       default:
-                           JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
-                           break;
-                   }
-               } catch (Exception ex) {
-                   ex.printStackTrace();
-               }
-           }
-        });
-
-        dropdown2 = new JComboBox<String>(modulesD1);
-        contentPanel.add(dropdown2, BorderLayout.SOUTH);
-        dropdown2.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String selection2 = (String) dropdown2.getSelectedItem();
-                try {
-                    switch (selection2) {
+        //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations.
+        for (int i = 0; i < controller.getModuleCount(); i++) {
+            final int iCopy = i;
+            JComboBox<String> dropdown = new JComboBox<String>(modulesD1);
+            dropdown.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    switch ((String) dropdowns.get(iCopy).getSelectedItem()) {
                         case "Joystick":
-                            Pcontroller.setModule2(2,0,"Joystick");
+                            Pcontroller.setComponent(iCopy, (byte) 'J');
+                            Pcontroller.setModule(iCopy,2,1,"Joystick",
+                                "Joystick with a press button and two axes of analog movement."
+                            );
                             break;
                         case "DPad":
-                            Pcontroller.setModule2(0,4,"DPad");
+                            Pcontroller.setComponent(iCopy, (byte) 'B');
+                            Pcontroller.setModule(iCopy,0,4,"DPad",
+                                "Four directional buttons intended to act as up or down and/or left or right."
+                            );
                             break;
                         case "ABXY":
-                            Pcontroller.setModule2(0,4,"ABXY");
+                            Pcontroller.setComponent(iCopy, (byte) 'B');
+                            Pcontroller.setModule(iCopy,0,4,"ABXY",
+                                "Four general-purpose buttons intended to act as A, B, X, and/or Y."
+                            );
                             break;
-                        case null:
-                            throw new NullPointerException("NULL ARGUMENT IN DROPDOWN MENU");
-                            //break;
+                        case "":
+                            Pcontroller.setComponent(iCopy, (byte) 'X');
+                            Pcontroller.setModule(iCopy, 0, 0, "",
+                                "Unset or empty module."
+                            );
+                            break;
                         default:
                             JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
-                            break;
                     }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
                 }
-            }
-        });
+            });
+            contentPanel.add(dropdown, BorderLayout.SOUTH);
+            dropdowns.add(dropdown);
+        }
 
-        dropdown3 = new JComboBox<String>(modulesD1);
-        contentPanel.add(dropdown3, BorderLayout.SOUTH);
-        dropdown3.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String selection3 = (String) dropdown3.getSelectedItem();
-                try {
-                    switch (selection3) {
-                        case "Joystick":
-                            Pcontroller.setModule3(2,0,"Joystick");
-                            break;
-                        case "DPad":
-                            Pcontroller.setModule3(0,4,"DPad");
-                            break;
-                        case "ABXY":
-                            Pcontroller.setModule3(0,4,"ABXY");
-                            break;
-                        case null:
-                            throw new NullPointerException("NULL ARGUMENT IN DROPDOWN MENU");
-                            //break;
-                        default:
-                            JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
-                            break;
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
-
-        dropdown4 = new JComboBox<String>(modulesD1);
-        contentPanel.add(dropdown4, BorderLayout.SOUTH);
-        dropdown4.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String selection4 = (String) dropdown4.getSelectedItem();
-                try {
-                    switch (selection4) {
-                        case "Joystick":
-                            Pcontroller.setModule4(2,0,"Joystick");
-                            break;
-                        case "DPad":
-                            Pcontroller.setModule4(0,4,"DPad");
-                            break;
-                        case "ABXY":
-                            Pcontroller.setModule4(0,4,"ABXY");
-                            break;
-                        case null:
-                            throw new NullPointerException("NULL ARGUMENT IN DROPDOWN MENU");
-                            //break;
-                        default:
-                            JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
-                            break;
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                //leaving this here for testing!! REMOVE IN PRODUCTION!!
-                //System.out.println(Arrays.toString(Pcontroller.getModulesFileWriter()));
-            }
-        });
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
         setContentPane(contentPanel);
@@ -255,37 +171,32 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         //should be overridden
     }
 
-    public void setModules(char[] modules, int[][] data) {
-        String name = null;
-        for (int i = 0; i < 4; i++) {
-            switch (modules[i]) {
+    public void setMapping(Mapping mapping) {
+        for (int i = 0; i < Pcontroller.getModuleCount(); i++) {
+            System.out.println(mapping.getComponent(i));
+            switch(mapping.getComponent(i)) {
                 case 'J':
-                    name = "Joystick";
+                    Pcontroller.setComponent(i, (byte) 'J');
+                    Pcontroller.setModule(i, 2, 1, "Joystick",
+                        "Joystick with a press button and two axes of analog movement."
+                    );
+                    dropdowns.get(i).setSelectedItem("Joystick");
                     break;
                 case 'B':
-                    name = "ABXY";
+                    Pcontroller.setComponent(i, (byte) 'B');
+                    Pcontroller.setModule(i, 0, 4, "ABXY",
+                        "Four general-purpose buttons intended to act as A, B, X, and/or Y."
+                    );
+                    dropdowns.get(i).setSelectedItem("ABXY");
                     break;
+                case 'X':
+                    Pcontroller.setComponent(i, (byte) 'X');
+                    Pcontroller.setModule(i, 0, 0, "",
+                        "Unset or empty module."
+                    );
                 default:
-                    name = " ";
-            }
-            switch (data[i][2]) {
-                case 1:
-                    Pcontroller.setModule1(data[i][1], data[i][0], name);
-                    dropdown1.setSelectedItem(name);
-                    break;
-                case 2:
-                    Pcontroller.setModule2(data[i][1], data[i][0], name);
-                    dropdown2.setSelectedItem(name);
-                    break;
-                case 3:
-                    Pcontroller.setModule3(data[i][1], data[i][0], name);
-                    dropdown3.setSelectedItem(name);
-                    break;
-                case 4:
-                    Pcontroller.setModule4(data[i][1], data[i][0], name);
-                    dropdown4.setSelectedItem(name);
-                    break;
-                default:
+                    JOptionPane.showMessageDialog(contentPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
+                    dropdowns.get(i).setSelectedItem("");
             }
         }
     }

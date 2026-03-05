@@ -11,16 +11,28 @@ public class Controller implements DeviceInterface {
 
     public Controller() {
         mapping = new Mapping();
-        modules = new Component[4];
+        modules = new Component[Mapping.DEFAULT_COMPONENT_COUNT];
     }
 
     public void initializeController() {
-        for (Component module : modules) {
-            if (module == null) {
-                module = new Component();
-                module.initialization();
+        for (int i = 0; i < modules.length; i++) {
+            if (modules[i] == null) {
+                modules[i] = new Component();
+                modules[i].initialization();
             }
         }
+    }
+
+    public int getModuleCount() {
+        return modules.length;
+    }
+
+    public int getPlaybackCount() {
+        return mapping.getPlaybackCount();
+    }
+
+    public void setComponent(int index, byte code) {
+        mapping.setComponent(index, code);
     }
 
     public void setModule(int index, int axes, int buttonQty, String name, String description) {
@@ -29,6 +41,17 @@ public class Controller implements DeviceInterface {
         modules[index].setName(name);
         modules[index].setDescription(description);
         modules[index].setModuleNumber(index + 1);
+        switch(name) {
+            case "Joystick":
+                mapping.setComponent(index, (byte) 'J');
+                break;
+            case "DPad":
+            case "ABXY":
+                mapping.setComponent(index, (byte) 'B');
+                break;
+            default:
+                mapping.setComponent(index, (byte) 0);
+        }
     }
 
     public Component getModule(int index) {
@@ -38,10 +61,13 @@ public class Controller implements DeviceInterface {
     // DeviceInterface implementations
     public String fileWriter(int ID) {
         // Data includes 1 B per component, 10 B per playback per component, and 4 B per trigger per component
-        byte[] data = new byte[mapping.getComponentCount() * (1 + 14 * mapping.getPlaybackCount())];
+        // Realized we should also have 1 B each for module and playback counts to properly read configs
+        byte[] data = new byte[modules.length * (1 + 14 * mapping.getPlaybackCount()) + 2];
+        data[0] = (byte) modules.length;
+        data[1] = (byte) mapping.getPlaybackCount();
         int cur;
-        for (cur = 0; cur < mapping.getComponentCount(); cur++) {
-            data[cur] = mapping.getComponent(cur);
+        for (cur = 2; cur < modules.length + 2; cur++) {
+            data[cur] = mapping.getComponent(cur - 2);
         }
         for (int i = 0; i < mapping.getPlaybackCount(); i++) {
             System.arraycopy(mapping.getTrigger(i), 0, data, cur, mapping.getTrigger(i).length);

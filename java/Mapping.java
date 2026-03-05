@@ -1,25 +1,25 @@
 public class Mapping {
-    public static final int COMPONENT_COUNT = 4;
-    public static final int PLAYBACK_COUNT = 8;
+    public static final int DEFAULT_COMPONENT_COUNT = 4;
+    public static final int DEFAULT_PLAYBACK_COUNT = 8;
     private byte[] components;
     private byte[][] playbacks;
     private byte[][] triggers;
 
     public Mapping(int components, int playbacks) {
-        setComponentCount(components);
-        setPlaybackCount(playbacks);
+        resetComponentCount(components);
+        resetPlaybackCount(playbacks);
     }
 
     public Mapping() {
-        setComponentCount(COMPONENT_COUNT);
-        setPlaybackCount(PLAYBACK_COUNT);
+        resetComponentCount(DEFAULT_COMPONENT_COUNT);
+        resetPlaybackCount(DEFAULT_PLAYBACK_COUNT);
     }
 
     public int getComponentCount() {
         return components.length;
     }
 
-    public void setComponentCount(int count) {
+    public void resetComponentCount(int count) {
         components = new byte[count];
     }
 
@@ -27,7 +27,7 @@ public class Mapping {
         return playbacks.length;
     }
 
-    public void setPlaybackCount(int count) {
+    public void resetPlaybackCount(int count) {
         triggers = new byte[count][4 * components.length];
         playbacks = new byte[count][10 * components.length];
     }
