@@ -1,11 +1,19 @@
+import com.fazecast.jSerialComm.SerialPort;
+
 import java.nio.charset.StandardCharsets;
 
 public class Controller implements DeviceInterface {
-    private Mapping mapping;
-    private Component[] modules;
+    private SerialPort port;
+    private final Mapping mapping;
+    private final Component[] modules;
 
-    public Controller(int components, int playbacks) {
-        mapping = new Mapping(components, playbacks);
+    public Controller(int components, int macros, int triggerLen, int playbackLen) {
+        mapping = new Mapping(components, macros, triggerLen, playbackLen);
+        modules = new Component[components];
+    }
+
+    public Controller(int components, int macros) {
+        mapping = new Mapping(components, macros);
         modules = new Component[components];
     }
 
@@ -27,12 +35,8 @@ public class Controller implements DeviceInterface {
         return modules.length;
     }
 
-    public int getPlaybackCount() {
-        return mapping.getPlaybackCount();
-    }
-
-    public void setComponent(int index, byte code) {
-        mapping.setComponent(index, code);
+    public Component getModule(int index) {
+        return modules[index];
     }
 
     public void setModule(int index, int axes, int buttonQty, String name, String description) {
@@ -54,30 +58,64 @@ public class Controller implements DeviceInterface {
         }
     }
 
-    public Component getModule(int index) {
-        return modules[index];
+    public int getMacroCount() {
+        return mapping.getMacroCount();
+    }
+
+    public void setComponent(int index, byte code) {
+        mapping.setComponent(index, code);
     }
 
     // DeviceInterface implementations
+    @Override
     public String fileWriter(int ID) {
-        // Data includes 1 B per component, 10 B per playback per component, and 4 B per trigger per component
-        // Realized we should also have 1 B each for module and playback counts to properly read configs
-        byte[] data = new byte[modules.length * (1 + 14 * mapping.getPlaybackCount()) + 2];
+        // Data includes 1 B per component, 1 B per playback length per playback per component, and 1 B
+        // per trigger length per trigger per component.
+        // Realized we should also have 1 B each for module and macro counts to properly read configs
+        byte[] data = new byte[
+            modules.length *
+            (1 + (mapping.getMacro(0).getTriggerLength() + mapping.getMacro(0).getPlaybackLength()) *
+            mapping.getMacroCount()) + 2
+        ];
         data[0] = (byte) modules.length;
-        data[1] = (byte) mapping.getPlaybackCount();
+        data[1] = (byte) mapping.getMacroCount();
         int cur;
         for (cur = 2; cur < modules.length + 2; cur++) {
             data[cur] = mapping.getComponent(cur - 2);
         }
-        for (int i = 0; i < mapping.getPlaybackCount(); i++) {
-            System.arraycopy(mapping.getTrigger(i), 0, data, cur, mapping.getTrigger(i).length);
-            cur += mapping.getTrigger(i).length;
+        for (int i = 0; i < mapping.getMacroCount(); i++) {
+            System.arraycopy(mapping.getMacro(i).getTrigger(), 0, data, cur, mapping.getMacro(i).getTriggerLength());
+            cur += mapping.getMacro(i).getTriggerLength();
         }
-        for (int i = 0; i < mapping.getPlaybackCount(); i++) {
-            System.arraycopy(mapping.getPlayback(i), 0, data, cur, mapping.getPlayback(i).length);
-            cur += mapping.getPlayback(i).length;
+        for (int i = 0; i < mapping.getMacroCount(); i++) {
+            System.arraycopy(mapping.getMacro(i).getPlayback(), 0, data, cur, mapping.getMacro(i).getPlaybackLength());
+            cur += mapping.getMacro(i).getPlaybackLength();
         }
         return new String(data, StandardCharsets.ISO_8859_1);
+    }
+
+    @Override
+    public boolean connect(int baud) {
+        return USBController.open(port.getSystemPortName(), baud);
+    }
+
+    @Override
+    public boolean disconnect() {
+        return USBController.close();
+    }
+
+    // Need to look at module-firmware for communication
+    @Override
+    public byte[] readHardware() {
+        return null;
+    }
+    @Override
+    public byte[] readInput() {
+        return null;
+    }
+    @Override
+    public boolean sendConfig(byte[] data) {
+        return false;
     }
 
     // Fixed module count functions (backwards-compatibility)

@@ -57,13 +57,13 @@ public class openWindow{
         for (cur = 2; cur < mapping.getComponentCount() + 2; cur++) { // 1 byte for each component starting at 2
             mapping.setComponent(cur - 2, data[cur]);
         }
-        for (int i = 0; i < mapping.getPlaybackCount(); i++) { // Copies a 10*component byte array for each trigger
-            System.arraycopy(data, cur, mapping.getTrigger(i), 0, mapping.getTrigger(i).length);
-            cur += mapping.getTrigger(i).length;
+        for (int i = 0; i < mapping.getMacroCount(); i++) { // Copies a 10*component byte array for each trigger
+            System.arraycopy(data, cur, mapping.getMacro(i).getTrigger(), 0, mapping.getMacro(i).getTriggerLength());
+            cur += mapping.getMacro(i).getTriggerLength();
         }
-        for (int i = 0; i < mapping.getPlaybackCount(); i++) {
-            System.arraycopy(data, cur, mapping.getPlayback(i), 0, mapping.getPlayback(i).length);
-            cur += mapping.getPlayback(i).length;
+        for (int i = 0; i < mapping.getMacroCount(); i++) {
+            System.arraycopy(data, cur, mapping.getMacro(i).getPlayback(), 0, mapping.getMacro(i).getPlaybackLength());
+            cur += mapping.getMacro(i).getPlaybackLength();
         }
         return mapping;
     }

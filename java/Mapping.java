@@ -1,35 +1,48 @@
 public class Mapping {
     public static final int DEFAULT_COMPONENT_COUNT = 4;
-    public static final int DEFAULT_PLAYBACK_COUNT = 8;
+    public static final int DEFAULT_MACRO_COUNT = 8;
     private byte[] components;
-    private byte[][] playbacks;
-    private byte[][] triggers;
+    private Macro[] macros;
 
-    public Mapping(int components, int playbacks) {
-        resetComponentCount(components);
-        resetPlaybackCount(playbacks);
+    public Mapping(int components, int macros, int triggerLen, int playbackLen) {
+        setComponentCount(components);
+        setMacroCount(macros, triggerLen, playbackLen);
+    }
+
+    public Mapping(int components, int macros) {
+        setComponentCount(components);
+        setMacroCount(macros);
     }
 
     public Mapping() {
-        resetComponentCount(DEFAULT_COMPONENT_COUNT);
-        resetPlaybackCount(DEFAULT_PLAYBACK_COUNT);
+        setComponentCount(DEFAULT_COMPONENT_COUNT);
+        setMacroCount(DEFAULT_MACRO_COUNT);
     }
 
     public int getComponentCount() {
         return components.length;
     }
 
-    public void resetComponentCount(int count) {
+    public void setComponentCount(int count) {
         components = new byte[count];
     }
 
-    public int getPlaybackCount() {
-        return playbacks.length;
+    public int getMacroCount() {
+        return macros.length;
     }
 
-    public void resetPlaybackCount(int count) {
-        triggers = new byte[count][4 * components.length];
-        playbacks = new byte[count][10 * components.length];
+    public void setMacroCount(int count, int triggerLen, int playbackLen) {
+        macros = new Macro[count];
+        for (int i = 0; i < macros.length; i++) {
+            macros[i] = new Macro(triggerLen, playbackLen);
+        }
+    }
+
+    public void setMacroCount(int count) {
+        macros = new Macro[count];
+        for (int i = 0; i < macros.length; i++) {
+            macros[i] = new Macro();
+        }
     }
 
     public byte getComponent(int index) {
@@ -40,19 +53,11 @@ public class Mapping {
         components[index] = component;
     }
 
-    public byte[] getPlayback(int index) {
-        return playbacks[index];
+    public Macro getMacro(int index) {
+        return macros[index];
     }
 
-    public void setPlayback(int index, byte[] commands) {
-        System.arraycopy(commands, 0, playbacks[index], 0, playbacks[0].length);
-    }
-
-    public byte[] getTrigger(int index) {
-        return triggers[index];
-    }
-
-    public void setTrigger(int index, byte[] commands) {
-        System.arraycopy(commands, 0, triggers[index], 0, triggers[0].length);
+    public void setMacro(int index, Macro macro) {
+        macros[index] = macro;
     }
 }

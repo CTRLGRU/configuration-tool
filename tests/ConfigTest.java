@@ -1,6 +1,5 @@
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,7 +18,7 @@ public class ConfigTest {
 
         // Check that component and playback counts were saved correctly
         assertEquals(Mapping.DEFAULT_COMPONENT_COUNT, buffer[0], "Component count not preserved.");
-        assertEquals(Mapping.DEFAULT_PLAYBACK_COUNT, buffer[1], "Playback count not preserved.");
+        assertEquals(Mapping.DEFAULT_MACRO_COUNT, buffer[1], "Macro count not preserved.");
         // Check that component codes were saved correctly
         assertEquals((byte) 'J', buffer[2], "Component code not preserved.");
         assertEquals((byte) 'B', buffer[3], "Component code not preserved.");

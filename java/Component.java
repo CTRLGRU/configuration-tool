@@ -8,6 +8,22 @@ public class Component implements ModuleInterface {
     private int Axes;
     private int ModuleNumber;
 
+    public String getName(){
+        return name;
+    }
+
+    public void setName(String named){
+        name = named;
+    }
+
+    public String getDescription(){
+        return description;
+    }
+
+    public void setDescription(String descriptiond){
+        description = descriptiond;
+    }
+
     // ModuleInterface implementations
     public int getButtonQty(){
         return ButtonQty;
@@ -36,22 +52,6 @@ public class Component implements ModuleInterface {
 
     public void setModuleNumber(int number){
         ModuleNumber = number;
-    }
-
-    public String getName(){
-        return name;
-    }
-
-    public void setName(String named){
-        name = named;
-    }
-
-    public String getDescription(){
-        return description;
-    }
-
-    public void setDescription(String descriptiond){
-        description = descriptiond;
     }
 
     // initialization technically is a clearing function.
