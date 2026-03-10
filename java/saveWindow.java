@@ -3,6 +3,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class saveWindow{
@@ -26,11 +27,11 @@ public class saveWindow{
                 filePath = filePath + ".fmc";
                 file = new File(filePath);
             }
-            try(FileWriter writer = new FileWriter(file)){
+            try(FileWriter writer = new FileWriter(file, StandardCharsets.ISO_8859_1)){
                 if(sController.returnModule1State() == 0 || sController.returnModule2State() == 0 || sController.returnModule3State() == 0 || sController.returnModule4State() == 0){
                     throw new IOException("Error saving file! File contains unpopulated module.");
                 }
-                writer.write(Arrays.toString(sController.getModulesFileWriter()));
+                writer.write(sController.fileWriter(0));
                 JOptionPane.showMessageDialog(saveFileFrame, "File saved successfully to" + filePath);
             }
             catch (IOException e){

@@ -12,67 +12,59 @@ public class openWindow{
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
         fileChooser.setDialogTitle("Open File...");
-        int result = fileChooser.showOpenDialog(openFrame); //hopefully you work
+        int result = fileChooser.showOpenDialog(openFrame);
         if(result == JFileChooser.APPROVE_OPTION){
             File file = fileChooser.getSelectedFile();
             JOptionPane.showMessageDialog(openFrame, "Selected File" + file.getAbsolutePath(), "Open Window", JOptionPane.INFORMATION_MESSAGE);
-            // According to pico2wmultithreadedcentralcontroller.ino's setCustomMapping function, a string of >= 4 chars is needed
-            // So, each module can be represented by 1 byte, where 'J'/'B'/'X' corresponds to joystick/4-button/unknown
-            // Presumably, ABXY and the D-pad are programmatically equivalent
-            int[][] data = parseConfig(file);
-            char[] modules = parseData(data);
-            parent.setModules(modules, data);
+            parent.setMapping(generateMapping(parseConfig(file)));
         }
         else {
             JOptionPane.showMessageDialog(openFrame, "Cancelled Operation", "Open Window", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private int[][] parseConfig(File in) {
-        int[][] data = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+    private byte[] parseConfig(File in) {
         try {
+            byte[] data;
             InputStream is = new FileInputStream(in);
-            Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
-            int r = reader.read();
+            Reader reader = new InputStreamReader(is, StandardCharsets.ISO_8859_1);
 
-            char c = (char) r;
-            boolean valid = (c == '[');
-            byte module = 0;
-            byte attribute = 0;
-            while (valid && r != -1 && c != ']') { // First char is '[', no read error, no ']' reached
-                if (c == '=') { // New module delimiter
-                    module++;
-                } else if (c == ':') { // New piece of data delimiter
-                    attribute++;
-                    attribute %= 3;
-                } else if (c != '\n' && c != ',' && c != ' ' && c != '[') { // Anything meaningful that's left (digits)
-                    data[module - 1][attribute] = (int) c - '0';
-                }
-                r = reader.read();
-                c = (char) r;
+            int components = reader.read();
+            int playbacks = reader.read();
+            if (components != -1 && playbacks != -1) {
+                data = new byte[components * (1 + 14 * playbacks) + 2];
+                data[0] = (byte) components;
+                data[1] = (byte) playbacks;
+            } else {
+                return new byte[1];
+            }
+
+            int i = 2;
+            for (int r = reader.read(); r != -1 && i < data.length; r = reader.read()) {
+                data[i] = (byte) r;
+                i++;
             }
             return data;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return data;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new byte[1];
         }
     }
 
-    private char[] parseData(int[][] data) {
-        char[] modules = {'X', 'X', 'X', 'X'};
-        for (int i = 0; i < 4; i++) {
-            if (data[i][2] < 0 || data[i][2] > 4) {
-                continue;
-            }
-            if (data[i][1] == 2) {
-                modules[data[i][2] - 1] = 'J';
-            } else if (data[i][0] == 4) {
-                // Currently no way to differentiate Dpad and ABXY (4 button, 0 axes)
-                modules[data[i][2] - 1] = 'B';
-            } else {
-                modules[data[i][2] - 1] = 'X';
-            }
+    private Mapping generateMapping(byte[] data) {
+        Mapping mapping = new Mapping(data[0], data[1]); // First 2 data bytes used
+        int cur;
+        for (cur = 2; cur < mapping.getComponentCount() + 2; cur++) { // 1 byte for each component starting at 2
+            mapping.setComponent(cur - 2, data[cur]);
         }
-        return modules;
+        for (int i = 0; i < mapping.getMacroCount(); i++) { // Copies a 10*component byte array for each trigger
+            System.arraycopy(data, cur, mapping.getMacro(i).getTrigger(), 0, mapping.getMacro(i).getTriggerLength());
+            cur += mapping.getMacro(i).getTriggerLength();
+        }
+        for (int i = 0; i < mapping.getMacroCount(); i++) {
+            System.arraycopy(data, cur, mapping.getMacro(i).getPlayback(), 0, mapping.getMacro(i).getPlaybackLength());
+            cur += mapping.getMacro(i).getPlaybackLength();
+        }
+        return mapping;
     }
 }

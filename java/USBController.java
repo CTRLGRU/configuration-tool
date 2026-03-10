@@ -56,7 +56,7 @@ public abstract class USBController {
         return port.openPort();
     }
 
-    public static boolean readBytes(byte[] buffer, int bytes) {
+    public static boolean readBytes(int bytes) {
         return bytes == port.readBytes(buffer, Math.min(bytes, buffer.length));
     }
 
@@ -64,30 +64,10 @@ public abstract class USBController {
         return SerialPort.getCommPorts();
     }
 
-    public static boolean writeBytes(byte[] data, int byteRate) {
+    public static boolean sendBuffer() {
         if (port == null || !port.isOpen()) {
             return false;
         }
-        // When true, chunk size would be 0
-        if (byteRate < 10) {
-            byteRate = Math.min(port.getBaudRate() / 8, port.getDeviceWriteBufferSize() * 10);
-        }
-        int progress = 0;
-        while (progress < data.length) {
-            // Create a new chunk with remaining bytes or max bytes per 100 ms
-            byte[] chunk = new byte[Math.min(byteRate / 10, data.length - progress)];
-            System.arraycopy(data, progress, chunk, 0, chunk.length);
-            if (chunk.length != port.writeBytes(chunk, chunk.length)) {
-                return false;
-            }
-            progress += chunk.length;
-            try {
-                // Pause for 100 ms, as non-Windows OSs only have decisecond granularity
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        return true;
+        return buffer.length == port.writeBytes(buffer, buffer.length);
     }
 }
