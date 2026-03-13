@@ -89,6 +89,10 @@ public class Controller implements DeviceInterface {
         mappings[curMapping].setComponent(index, code);
     }
 
+    public void setPort(SerialPort other) {
+        port = other;
+    }
+
     // DeviceInterface implementations
     @Override
     public String fileWriter(int ID) {
@@ -145,6 +149,11 @@ public class Controller implements DeviceInterface {
     }
 
     @Override
+    public int inputBuffer() {
+        return port.bytesAvailable();
+    }
+
+    @Override
     public byte[] readHardware() {
         byte[] command = {'M','O','D','U','L','E','S',0}; // null-terminated "MODULES"
         USBController.initialize(command.length);
@@ -177,7 +186,12 @@ public class Controller implements DeviceInterface {
 
     @Override
     public byte[] readInput() {
-        return null;
+        int size = (modules.length + 2) * 8;
+        USBController.initialize(size);
+        if (!USBController.readBytes(size)) { // Quick and dirty for now
+            System.out.println("Controller: readInput() failed.");
+        }
+        return USBController.retrieveBuffer();
     }
 
     @Override

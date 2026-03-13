@@ -33,7 +33,7 @@ public abstract class USBController {
         port.setComPortTimeouts(
             SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING,
             1000,
-            0
+            1000
         );
 
         return port.openPort();
@@ -50,7 +50,7 @@ public abstract class USBController {
         port.setComPortTimeouts(
             SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING,
             1000,
-            0
+            1000
         );
 
         return port.openPort();

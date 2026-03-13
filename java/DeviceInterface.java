@@ -10,6 +10,9 @@ public interface DeviceInterface {
     // Device disconnect function
     public boolean disconnect();
 
+    // Checks how many bytes are ready to be read
+    public int inputBuffer();
+
     // Reads data sent by the device to identify modules
     public byte[] readHardware();
 

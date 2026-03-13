@@ -2,9 +2,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 public class programWindow{
+    private boolean input = true;
+
     public programWindow(WindowController parent, Controller controller) {
         JFrame programFrame = new JFrame("Program...");
         programFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -13,6 +17,11 @@ public class programWindow{
         programFrame.setSize(600, 400);
 
         JPanel contentPanel = new JPanel();
+        JTextArea info = new JTextArea();
+        info.setEditable(false);
+        info.setLineWrap(true);
+        info.setWrapStyleWord(true);
+        contentPanel.add(info);
         JTextArea output = new JTextArea();
         output.setEditable(false);
         output.setLineWrap(true);
@@ -24,43 +33,55 @@ public class programWindow{
         JButton modulesBtn = new JButton("Get Modules");
         modulesBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                input = false;
                 // Update these in the WindowController?
-                output.setText("Modules loaded: " + new String(controller.readHardware(), StandardCharsets.ISO_8859_1));
+                info.setText("Modules loaded: " + new String(controller.readHardware(), StandardCharsets.ISO_8859_1));
+                input = true;
             }
         });
         JButton configsBtn = new JButton("Get Mappings");
         configsBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                input = false;
                 byte[] data = controller.readMappings();
-                for (int i = 0; i < controller.getMappingCount(); i++) {
+                for (int i = controller.getMappingCount() - 1; i >= 0; i--) {
                     byte[] dataPiece = new byte[data.length / controller.getMappingCount()];
                     System.arraycopy(data, data.length * i / controller.getMappingCount(), dataPiece, 0, dataPiece.length);
+                    Mapping mapping = Mapping.generateMapping(dataPiece, controller.getModuleCount(), controller.getMacroCount());
                     controller.setMapping(
-                        i,
-                        Mapping.generateMapping(dataPiece, controller.getModuleCount(), controller.getMacroCount())
+                            i,
+                            mapping
                     );
+                    parent.setMapping(mapping); // Mappings read backwards to preserve module dropdowns here
                 }
-                output.setText("Loaded controller mappings!");
+                info.setText("Loaded controller mappings!");
+                input = true;
             }
         });
         JButton resetBtn = new JButton("Wipe Mappings");
         resetBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                input = false;
                 controller.wipeMappings();
-                output.setText("Controller mappings wiped!");
+                info.setText("Controller mappings wiped!");
+                input = true;
             }
         });
         JButton saveBtn = new JButton("Save Mappings");
         saveBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                input = false;
                 controller.sendConfigs();
-                output.setText("Uploaded controller mappings!");
+                info.setText("Uploaded controller mappings!");
+                input = true;
             }
         });
         JButton testBtn = new JButton("Run Tests");
         testBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                output.setText(new String(controller.runTests(), StandardCharsets.ISO_8859_1));
+                input = false;
+                info.setText(new String(controller.runTests(), StandardCharsets.ISO_8859_1));
+                input = true;
             }
         });
         btnPanel.add(modulesBtn);
@@ -80,5 +101,25 @@ public class programWindow{
         programFrame.add(contentPanel, BorderLayout.CENTER);
 
         programFrame.setVisible(true);
+
+        Runnable outputLoop = new Runnable() {
+            public void run() {
+                String current = "";
+                if (input) {
+                    byte[] data = controller.readInput();
+                    byte[] dataPiece = new byte[8];
+                    for (int i = 0; i < controller.getModuleCount(); i++) {
+                        System.arraycopy(data, 8 * i, dataPiece, 0, 8);
+                        current += "Module " + (i + 1) + ": " + Long.toBinaryString(ByteBuffer.wrap(dataPiece).order(ByteOrder.LITTLE_ENDIAN).getLong()) + "\n";
+                    }
+                    for (int i = controller.getModuleCount(); i < controller.getModuleCount() + 2; i++) {
+                        System.arraycopy(data, 8 * i, dataPiece, 0, 8);
+                        current += "Trigger " + (i - controller.getModuleCount()) + ": " + Long.toBinaryString(ByteBuffer.wrap(dataPiece).order(ByteOrder.LITTLE_ENDIAN).getLong()) + "\n";
+                    }
+                }
+                output.setText(current);
+            }
+        };
+        new Thread(outputLoop).start();
     }
 }
