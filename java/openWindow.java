@@ -3,7 +3,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 public class openWindow{
-    public openWindow(WindowController parent) {
+    public openWindow(WindowController parent, Controller controller) {
         JFrame openFrame = new JFrame("Open Window");
         openFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         openFrame.setLocationRelativeTo(null);
@@ -16,38 +16,47 @@ public class openWindow{
         if(result == JFileChooser.APPROVE_OPTION){
             File file = fileChooser.getSelectedFile();
             JOptionPane.showMessageDialog(openFrame, "Selected File" + file.getAbsolutePath(), "Open Window", JOptionPane.INFORMATION_MESSAGE);
-            //parent.setMapping(generateMapping(parseConfig(file)));
+            byte[] data = parseConfig(file, controller);
+            if (data == null) {
+                System.out.println("openWindow: parseConfig() failed!");
+                return;
+            }
+            for (int i = controller.getMappingCount() - 1; i >= 0; i--) {
+                byte[] dataPiece = new byte[data.length / controller.getMappingCount()];
+                System.arraycopy(data, data.length * i / controller.getMappingCount(), dataPiece, 0, dataPiece.length);
+                Mapping mapping = Mapping.generateMapping(dataPiece, controller.getModuleCount(), controller.getMacroCount());
+                controller.setMapping(
+                    i,
+                    mapping
+                );
+                parent.setMapping(mapping); // Mappings read backwards to preserve module dropdowns here
+            }
         }
         else {
             JOptionPane.showMessageDialog(openFrame, "Cancelled Operation", "Open Window", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private byte[] parseConfig(File in) {
+    private byte[] parseConfig(File in, Controller controller) {
         try {
-            byte[] data;
             InputStream is = new FileInputStream(in);
             Reader reader = new InputStreamReader(is, StandardCharsets.ISO_8859_1);
 
-            int components = reader.read();
-            int playbacks = reader.read();
-            if (components != -1 && playbacks != -1) {
-                data = new byte[components * (1 + 14 * playbacks) + 2];
-                data[0] = (byte) components;
-                data[1] = (byte) playbacks;
-            } else {
-                return new byte[1];
-            }
+            byte[] data = new byte[
+                (controller.getModuleCount() + controller.getMacroCount() *
+                (controller.getMapping(0).getMacro(0, 0).getTriggerLength() + controller.getMapping(0).getMacro(0, 0).getPlaybackLength()) *
+                (controller.getMapping(0).getComponentCount() + 2)) * controller.getMappingCount()
+            ];
 
-            int i = 2;
-            for (int r = reader.read(); r != -1 && i < data.length; r = reader.read()) {
-                data[i] = (byte) r;
-                i++;
+            int cur = 0;
+            for (int r = reader.read(); r != -1 && cur < data.length; r = reader.read()) {
+                data[cur] = (byte) r;
+                cur++;
             }
             return data;
         } catch (Exception e) {
             e.printStackTrace();
-            return new byte[1];
+            return null;
         }
     }
 }

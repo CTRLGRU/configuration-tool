@@ -20,5 +20,11 @@ public interface DeviceInterface {
     public byte[] readInput();
 
     // Sends module, mapping, and configuration data to the device
-    public boolean sendConfig();
+    public boolean sendConfigs();
+
+    // Wipes configuration data from the controller
+    public boolean wipeMappings();
+
+    // Runs hardware tests and displays output
+    public byte[] runTests();
 }

@@ -52,7 +52,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // OPEN MENU
         JMenuItem openMenuItem = new JMenuItem("Open");
         openMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
-        openMenuItem.addActionListener(e -> new openWindow(this)); //Where you add the OPEN functionality
+        openMenuItem.addActionListener(e -> new openWindow(this, Pcontroller)); //Where you add the OPEN functionality
         fileMenu.add(openMenuItem);
         // SAVE MENU
         JMenuItem saveMenuItem = new JMenuItem("Save");
@@ -85,7 +85,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // OPTIONS MENU SUB ITEMS
         // PROGRAM
         JMenuItem programMenuItem = new JMenuItem("Program");
-        programMenuItem.addActionListener(e -> new programWindow(Pcontroller));
+        programMenuItem.addActionListener(e -> new programWindow(this, Pcontroller));
         optionMenu.add(programMenuItem);
         // UPDATE
         JMenuItem updateMenuItem = new JMenuItem("Update");
@@ -173,7 +173,6 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
 
     public void setMapping(Mapping mapping) {
         for (int i = 0; i < Pcontroller.getModuleCount(); i++) {
-            System.out.println(mapping.getComponent(i));
             switch(mapping.getComponent(i)) {
                 case 'J':
                     Pcontroller.setComponent(i, (byte) 'J');

@@ -69,6 +69,18 @@ public class Controller implements DeviceInterface {
         }
     }
 
+    public Mapping getMapping(int index) {
+        return mappings[index];
+    }
+
+    public void setMapping(int index, Mapping mapping) {
+        mappings[index] = mapping;
+    }
+
+    public int getMappingCount() {
+        return mappings.length;
+    }
+
     public int getMacroCount() {
         return mappings[curMapping].getMacroCount();
     }
@@ -93,7 +105,7 @@ public class Controller implements DeviceInterface {
         byte[] data = new byte[
             (modules.length + mappings[ID].getMacroCount() *
             (mappings[ID].getMacro(0, 0).getTriggerLength() + mappings[ID].getMacro(0, 0).getPlaybackLength()) *
-            mappings[ID].getComponentCount()) * count
+            (mappings[ID].getComponentCount() + 2)) * count
         ];
         int cur = 0;
         do { // Do once no matter what
@@ -150,7 +162,7 @@ public class Controller implements DeviceInterface {
     public byte[] readMappings() {
         int size = (modules.length + mappings[curMapping].getMacroCount() *
             (mappings[curMapping].getMacro(0, 0).getTriggerLength() + mappings[curMapping].getMacro(0, 0).getPlaybackLength()) *
-            mappings[curMapping].getComponentCount()) * 3;
+            (modules.length + 2)) * 3;
         byte[] command = {'C','O','N','F','I','G','S',0}; // null-terminated "CONFIGS"
         USBController.initialize(command.length);
         boolean success = USBController.fillBuffer(command);
@@ -169,7 +181,7 @@ public class Controller implements DeviceInterface {
     }
 
     @Override
-    public boolean sendConfig() {
+    public boolean sendConfigs() {
         byte[] command = {'S', 'A', 'V', 'E', 0}; // null-terminated "SAVE"
         USBController.initialize(command.length);
         boolean success = USBController.fillBuffer(command);
@@ -181,6 +193,28 @@ public class Controller implements DeviceInterface {
         );
         success = success && USBController.fillBuffer(fileWriter(-1).getBytes(StandardCharsets.ISO_8859_1));
         return success && USBController.sendBuffer();
+    }
+
+    @Override
+    public boolean wipeMappings() {
+        byte[] command = {'W', 'I', 'P', 'E', 0}; // null-terminated "WIPE"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        return success && USBController.sendBuffer();
+    }
+
+    @Override
+    public byte[] runTests() {
+        byte[] command = {'T','E','S','T',0}; // null-terminated "TEST"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        USBController.initialize(1024);
+        success = success && USBController.readBytes(1024);
+        if (!success) { // Quick and dirty for now
+            System.out.println("Controller: runTests() failed.");
+        }
+        return USBController.retrieveBuffer();
     }
 
     // Fixed module count functions (backwards-compatibility)
