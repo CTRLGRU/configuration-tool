@@ -16,7 +16,7 @@ public class openWindow{
         if(result == JFileChooser.APPROVE_OPTION){
             File file = fileChooser.getSelectedFile();
             JOptionPane.showMessageDialog(openFrame, "Selected File" + file.getAbsolutePath(), "Open Window", JOptionPane.INFORMATION_MESSAGE);
-            parent.setMapping(generateMapping(parseConfig(file)));
+            //parent.setMapping(generateMapping(parseConfig(file)));
         }
         else {
             JOptionPane.showMessageDialog(openFrame, "Cancelled Operation", "Open Window", JOptionPane.ERROR_MESSAGE);
@@ -49,22 +49,5 @@ public class openWindow{
             e.printStackTrace();
             return new byte[1];
         }
-    }
-
-    private Mapping generateMapping(byte[] data) {
-        Mapping mapping = new Mapping(data[0], data[1]); // First 2 data bytes used
-        int cur;
-        for (cur = 2; cur < mapping.getComponentCount() + 2; cur++) { // 1 byte for each component starting at 2
-            mapping.setComponent(cur - 2, data[cur]);
-        }
-        for (int i = 0; i < mapping.getMacroCount(); i++) { // Copies a 10*component byte array for each trigger
-            System.arraycopy(data, cur, mapping.getMacro(i).getTrigger(), 0, mapping.getMacro(i).getTriggerLength());
-            cur += mapping.getMacro(i).getTriggerLength();
-        }
-        for (int i = 0; i < mapping.getMacroCount(); i++) {
-            System.arraycopy(data, cur, mapping.getMacro(i).getPlayback(), 0, mapping.getMacro(i).getPlaybackLength());
-            cur += mapping.getMacro(i).getPlaybackLength();
-        }
-        return mapping;
     }
 }

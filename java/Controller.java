@@ -3,22 +3,33 @@ import com.fazecast.jSerialComm.SerialPort;
 import java.nio.charset.StandardCharsets;
 
 public class Controller implements DeviceInterface {
-    private SerialPort port;
-    private final Mapping mapping;
+    public static final int DEFAULT_CONFIG_COUNT = 3;
+    private final Mapping[] mappings;
     private final Component[] modules;
+    private SerialPort port;
+    private int curMapping = 0;
 
-    public Controller(int components, int macros, int triggerLen, int playbackLen) {
-        mapping = new Mapping(components, macros, triggerLen, playbackLen);
+    public Controller(int components, int configs, int macros, int triggerLen, int playbackLen) {
+        mappings = new Mapping[configs];
+        for (int i = 0; i < configs; i++) {
+            mappings[i] = new Mapping(components, macros, triggerLen, playbackLen);
+        }
         modules = new Component[components];
     }
 
-    public Controller(int components, int macros) {
-        mapping = new Mapping(components, macros);
+    public Controller(int components, int configs, int macros) {
+        mappings = new Mapping[configs];
+        for (int i = 0; i < configs; i++) {
+            mappings[i] = new Mapping(components, macros);
+        }
         modules = new Component[components];
     }
 
     public Controller() {
-        mapping = new Mapping();
+        mappings = new Mapping[DEFAULT_CONFIG_COUNT];
+        for (int i = 0; i < DEFAULT_CONFIG_COUNT; i++) {
+            mappings[i] = new Mapping(Mapping.DEFAULT_COMPONENT_COUNT, Mapping.DEFAULT_MACRO_COUNT);
+        }
         modules = new Component[Mapping.DEFAULT_COMPONENT_COUNT];
     }
 
@@ -47,50 +58,67 @@ public class Controller implements DeviceInterface {
         modules[index].setModuleNumber(index + 1);
         switch(name) {
             case "Joystick":
-                mapping.setComponent(index, (byte) 'J');
+                mappings[curMapping].setComponent(index, (byte) 'J');
                 break;
             case "DPad":
             case "ABXY":
-                mapping.setComponent(index, (byte) 'B');
+                mappings[curMapping].setComponent(index, (byte) 'B');
                 break;
             default:
-                mapping.setComponent(index, (byte) 0);
+                mappings[curMapping].setComponent(index, (byte) 0);
         }
     }
 
     public int getMacroCount() {
-        return mapping.getMacroCount();
+        return mappings[curMapping].getMacroCount();
     }
 
     public void setComponent(int index, byte code) {
-        mapping.setComponent(index, code);
+        mappings[curMapping].setComponent(index, code);
     }
 
     // DeviceInterface implementations
     @Override
     public String fileWriter(int ID) {
-        // Data includes 1 B per component, 1 B per playback length per playback per component, and 1 B
-        // per trigger length per trigger per component.
-        // Realized we should also have 1 B each for module and macro counts to properly read configs
+        // [Previous iteration not really in line with module-firmware repo]
+        // 1B per module + 1B per macro per trigger step per component (modules plus hardwired triggers)
+        // + 1B per macro per playback step per component = 4 + 8*(4 + 10)*6 = 676B per mapping
+        int count = 1;
+        if (ID < 0) {
+            count = DEFAULT_CONFIG_COUNT;
+            ID = 0;
+        } else if (ID >= mappings.length) {
+            ID = curMapping;
+        }
         byte[] data = new byte[
-            modules.length *
-            (1 + (mapping.getMacro(0).getTriggerLength() + mapping.getMacro(0).getPlaybackLength()) *
-            mapping.getMacroCount()) + 2
+            (modules.length + mappings[ID].getMacroCount() *
+            (mappings[ID].getMacro(0, 0).getTriggerLength() + mappings[ID].getMacro(0, 0).getPlaybackLength()) *
+            mappings[ID].getComponentCount()) * count
         ];
-        data[0] = (byte) modules.length;
-        data[1] = (byte) mapping.getMacroCount();
-        int cur;
-        for (cur = 2; cur < modules.length + 2; cur++) {
-            data[cur] = mapping.getComponent(cur - 2);
-        }
-        for (int i = 0; i < mapping.getMacroCount(); i++) {
-            System.arraycopy(mapping.getMacro(i).getTrigger(), 0, data, cur, mapping.getMacro(i).getTriggerLength());
-            cur += mapping.getMacro(i).getTriggerLength();
-        }
-        for (int i = 0; i < mapping.getMacroCount(); i++) {
-            System.arraycopy(mapping.getMacro(i).getPlayback(), 0, data, cur, mapping.getMacro(i).getPlaybackLength());
-            cur += mapping.getMacro(i).getPlaybackLength();
-        }
+        int cur = 0;
+        do { // Do once no matter what
+            for (int i = 0; i < modules.length; i++) { // Copy component character codes
+                data[cur] = mappings[ID].getComponent(i);
+                cur++;
+            }
+            for (int i = 0; i < mappings[ID].getMacroCount(); i++) { // For every macro
+                for (int j = 0; j < mappings[ID].getMacro(i, 0).getTriggerLength(); j++) { // For every trigger step
+                    for (int k = 0; k < mappings[ID].getComponentCount() + 2; k++) { // For every component, copy a byte
+                        data[cur] = mappings[ID].getMacro(i, k).getTrigger()[j];
+                        cur++;
+                    }
+                }
+            }
+            for (int i = 0; i < mappings[ID].getMacroCount(); i++) { // For every macro
+                for (int j = 0; j < mappings[ID].getMacro(i, 0).getPlaybackLength(); j++) { // For every playback step
+                    for (int k = 0; k < mappings[ID].getComponentCount() + 2; k++) { // For every component, copy a byte
+                        data[cur] = mappings[ID].getMacro(i, k).getPlayback()[j];
+                        cur++;
+                    }
+                }
+            }
+            ID++;
+        } while(count != 1 && ID < mappings.length); // Only repeat if provided ID was negative, and is incomplete
         return new String(data, StandardCharsets.ISO_8859_1);
     }
 
@@ -104,18 +132,55 @@ public class Controller implements DeviceInterface {
         return USBController.close();
     }
 
-    // Need to look at module-firmware for communication
     @Override
     public byte[] readHardware() {
-        return null;
+        byte[] command = {'M','O','D','U','L','E','S',0}; // null-terminated "MODULES"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        USBController.initialize(modules.length);
+        success = success && USBController.readBytes(modules.length);
+        if (!success) { // Quick and dirty for now
+            System.out.println("Controller: readHardware() failed.");
+        }
+        return USBController.retrieveBuffer();
     }
+
+    @Override
+    public byte[] readMappings() {
+        int size = (modules.length + mappings[curMapping].getMacroCount() *
+            (mappings[curMapping].getMacro(0, 0).getTriggerLength() + mappings[curMapping].getMacro(0, 0).getPlaybackLength()) *
+            mappings[curMapping].getComponentCount()) * 3;
+        byte[] command = {'C','O','N','F','I','G','S',0}; // null-terminated "CONFIGS"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        USBController.initialize(size);
+        success = success && USBController.readBytes(size);
+        if (!success) { // Quick and dirty for now
+            System.out.println("Controller: readMapping() failed.");
+        }
+        return USBController.retrieveBuffer();
+    }
+
     @Override
     public byte[] readInput() {
         return null;
     }
+
     @Override
-    public boolean sendConfig(byte[] data) {
-        return false;
+    public boolean sendConfig() {
+        byte[] command = {'S', 'A', 'V', 'E', 0}; // null-terminated "SAVE"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        USBController.initialize( // For now: 3 mappings * (4 modules + 8 macros * (4 trigger length + 10 playback length) * (4 modules + 2 hardwired triggers))
+            (modules.length + mappings[curMapping].getMacroCount() *
+            (mappings[curMapping].getMacro(0, 0).getTriggerLength() + mappings[curMapping].getMacro(0, 0).getPlaybackLength()) *
+            (modules.length + 2)) * 3
+        );
+        success = success && USBController.fillBuffer(fileWriter(-1).getBytes(StandardCharsets.ISO_8859_1));
+        return success && USBController.sendBuffer();
     }
 
     // Fixed module count functions (backwards-compatibility)

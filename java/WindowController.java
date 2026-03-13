@@ -85,7 +85,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // OPTIONS MENU SUB ITEMS
         // PROGRAM
         JMenuItem programMenuItem = new JMenuItem("Program");
-        programMenuItem.addActionListener(e -> new programWindow());
+        programMenuItem.addActionListener(e -> new programWindow(Pcontroller));
         optionMenu.add(programMenuItem);
         // UPDATE
         JMenuItem updateMenuItem = new JMenuItem("Update");

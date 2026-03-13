@@ -13,9 +13,12 @@ public interface DeviceInterface {
     // Reads data sent by the device to identify modules
     public byte[] readHardware();
 
+    // Reads data sent by the device in the form of configurations
+    public byte[] readMappings();
+
     // Reads input buffer sent by the device to verify functioning
     public byte[] readInput();
 
     // Sends module, mapping, and configuration data to the device
-    public boolean sendConfig(byte[] data);
+    public boolean sendConfig();
 }
