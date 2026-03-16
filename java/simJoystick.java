@@ -40,7 +40,7 @@ public class simJoystick implements simModule{
 
 
         if(!parity(collectedData)){
-            temp |= (1 << 7);
+            collectedData[0] |= (1 << 7);
         }
 
         System.arraycopy(collectedData, 0, intermediateData, 0, 4);
