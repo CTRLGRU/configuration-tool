@@ -1,7 +1,7 @@
-public class simMappingStorage {
+public class simMemory {
     static int commercialLayouts = 2;
     static int customLayouts = 3;
-    int totalMappings = simMappingStorage.commercialLayouts + simMappingStorage.customLayouts;
+    int totalMappings = commercialLayouts + customLayouts;
     byte[][] mapArray = new byte[2][8];
 
     byte[] setMapping(int mapping) {

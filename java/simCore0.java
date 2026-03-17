@@ -10,7 +10,7 @@ public class simCore0 implements simCore{
 
 
 
-    simMappingStorage mapSystem;
+    simMemory mapSystem;
     int currentMapping = 0;
     byte outputMode = 'G';  //default to generic USB
 
