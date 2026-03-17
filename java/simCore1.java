@@ -105,4 +105,8 @@ public class simCore1 implements simCore{
         }
         return false;
     }
+
+    public char[] getPartMap(){
+        return partMap;
+    }
 }
