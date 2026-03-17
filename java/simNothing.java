@@ -9,7 +9,7 @@ public class simNothing implements simModule{
 
     @Override
     public byte bufferTransfer(byte rx) {
-        Random r = new Random;
+        Random r = new Random();
         byte[] oneRandomByte = new byte[1];
         r.nextBytes(oneRandomByte);
         return oneRandomByte[0];

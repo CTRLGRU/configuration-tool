@@ -19,7 +19,6 @@ public class simController {
     public void simulate(){
         internalIO.simulate();
         mapping[0]=internalIO.getPartMap();
-        externalIO.set
         externalIO.simulate();
     }
 
