@@ -3,7 +3,7 @@ public class simController {
 
 
 
-    char[][] mapping = new char[2][4];
+    byte[][] mapping = new byte[2][4];
 
     simCore0 externalIO;
     simCore1 internalIO;

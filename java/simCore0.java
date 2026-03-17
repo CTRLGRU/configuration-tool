@@ -6,13 +6,13 @@ public class simCore0 implements simCore{
     byte[] tx = new byte[64];
     boolean rxFlag = false;
 
-    char[][] mapping = new char[2][8];
+    byte[][] mapping = new byte[2][8];
 
 
 
     simMappingStorage mapSystem;
     int currentMapping = 0;
-    char outputMode = 'G';  //default to generic USB
+    byte outputMode = 'G';  //default to generic USB
 
 
 
@@ -67,6 +67,6 @@ public class simCore0 implements simCore{
         if(currentMapping >= mapSystem.getTotalMappings()){
             currentMapping=0;
         }
-        mapSystem.setMapping(currentMapping,mapping);
+        mapping[1] = mapSystem.setMapping(currentMapping);
     }
 }

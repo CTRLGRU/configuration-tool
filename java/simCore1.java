@@ -2,9 +2,9 @@ public class simCore1 implements simCore{
 
     long timeSinceLast = 0;
     byte[][] intermediateBuffer = new byte[6][8];
-    char[] partMap = new char[4];
+    byte[] partMap = new byte[4];
     simBus bus;
-    static char[] supportedIDs = {'B','J'};
+    static byte[] supportedIDs = {'B','J'};
 
     public byte[][] getBuffer(){
         return intermediateBuffer;
@@ -88,8 +88,8 @@ public class simCore1 implements simCore{
         }
     }
 
-    private char getID(int line){
-        char returnedByte = (char)bus.transmit((byte)'X',line);
+    private byte getID(int line){
+        byte returnedByte = bus.transmit((byte)'X',line);
         if(verifyModuleID(returnedByte)){
             return returnedByte;
         } else{
@@ -97,7 +97,7 @@ public class simCore1 implements simCore{
         }
     }
 
-    private boolean verifyModuleID(char ID){
+    private boolean verifyModuleID(byte ID){
         for(int i = 0; i < supportedIDs.length; i++){
             if(ID == supportedIDs[i]){
                 return true;
@@ -106,7 +106,7 @@ public class simCore1 implements simCore{
         return false;
     }
 
-    public char[] getPartMap(){
+    public byte[] getPartMap(){
         return partMap;
     }
 }
