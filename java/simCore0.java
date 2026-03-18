@@ -6,15 +6,23 @@ public class simCore0 implements simCore{
     byte[] tx = new byte[64];
     boolean rxFlag = false;
 
-    char[][] mapping = new char[2][8];
-
+    byte[][] mapping = new byte[2][8];
 
 
     simMappingStorage mapSystem;
     int currentMapping = 0;
     char outputMode = 'G';  //default to generic USB
 
+    public void setPartMap(byte[] in){
+        mapping[0] = in;
+    }
 
+    public void init(){
+        mapping[1][0] = 'J';
+        mapping[1][1] = 'B';
+        mapping[1][2] = 'J';
+        mapping[1][3] = 'B';
+    }
 
 
     boolean[] flags = new boolean[8];
@@ -33,13 +41,53 @@ public class simCore0 implements simCore{
 
     @Override
     public void simulate() {
-        if (rxFlag) {
-            commandReceived();
-        }
+        rxHandling();
+        flagHandling();
 
-        if (flags[0]) {
-            incrementMapping();
+        translation();
+
+        output();
+
+
+
+    }
+
+
+    private void translation(){
+        for(int i = 0; i < 4; i++){
+            if(mapping[0][i] == mapping[1][i] || mapping[0][i] == 'X'){
+                continue;
+            } else{
+                translateModule(i);
+            }
         }
+    }
+
+    private void translateModule(int line){
+        switch(mapping[0][line]){
+            case 'B':
+                switch(mapping[1][line]){
+                    case 'J':
+                        translateButtonToJoystick(line);
+                }
+            case 'J':
+                switch(mapping[1][line]){
+                    case 'B':
+                        translateJoystickToButton(line);
+                }
+        }
+    }
+
+    private void translateButtonToJoystick(int line){
+
+    }
+
+    private void translateJoystickToButton(int line){
+
+    }
+
+    private void output(){
+
     }
 
 
@@ -58,8 +106,16 @@ public class simCore0 implements simCore{
         return tx;
     }
 
-    private void commandReceived(){
+    private void rxHandling(){
+        if(rxFlag){
 
+        }
+    }
+
+    private void flagHandling(){
+        if (flags[0]) {
+            incrementMapping();
+        }
     }
 
     private void incrementMapping(){

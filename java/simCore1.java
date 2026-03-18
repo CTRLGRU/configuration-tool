@@ -2,7 +2,7 @@ public class simCore1 implements simCore{
 
     long timeSinceLast = 0;
     byte[][] intermediateBuffer = new byte[6][8];
-    char[] partMap = new char[4];
+    byte[] partMap = new byte[4];
     simBus bus;
     static char[] supportedIDs = {'B','J'};
 
@@ -10,21 +10,29 @@ public class simCore1 implements simCore{
         return intermediateBuffer;
     }
 
+    public void init(){
+
+    }
+
+    public byte[] getpartMap(){
+        return partMap;
+    }
+
     @Override
     public void simulate() {
-        if ((System.currentTimeMillis() - 2) >= 1) {
+        if ((System.currentTimeMillis() - timeSinceLast) >= 1) {
             return;
         }
 
-        for(int i = 0; i < 6; i++){
-            for(int j = 0; j < 8; j++){
-                intermediateBuffer[i][j]=0;
-            }
-        }
+        clearBuffer();
+
 
         for (int i = 0; i < 4; i++) {
             pollModule(i);
         }
+
+        intermediateBuffer[5][0] = pollIntegralButtons();
+        intermediateBuffer[6] = pollIntegratedTriggers();
 
 
     }
@@ -88,8 +96,8 @@ public class simCore1 implements simCore{
         }
     }
 
-    private char getID(int line){
-        char returnedByte = (char)bus.transmit((byte)'X',line);
+    private byte getID(int line){
+        byte returnedByte = bus.transmit((byte)'X',line);
         if(verifyModuleID(returnedByte)){
             return returnedByte;
         } else{
@@ -97,7 +105,7 @@ public class simCore1 implements simCore{
         }
     }
 
-    private boolean verifyModuleID(char ID){
+    private boolean verifyModuleID(byte ID){
         for(int i = 0; i < supportedIDs.length; i++){
             if(ID == supportedIDs[i]){
                 return true;
@@ -106,7 +114,25 @@ public class simCore1 implements simCore{
         return false;
     }
 
-    public char[] getPartMap(){
+    public byte[] getPartMap(){
         return partMap;
+    }
+
+    private void clearBuffer(){
+        for(int i = 0; i < 6; i++){
+            for(int j = 0; j < 8; j++){
+                intermediateBuffer[i][j]=0;
+            }
+        }
+    }
+
+    private byte pollIntegralButtons(){
+        byte buttonData = 0;
+        return buttonData;
+    }
+
+    private byte[] pollIntegratedTriggers(){
+        byte[] triggerData = new byte[8];
+        return triggerData;
     }
 }
