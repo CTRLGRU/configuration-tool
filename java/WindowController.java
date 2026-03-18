@@ -25,6 +25,8 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         //Panel inside the window
         contentPanel.setLayout(new GridBagLayout());
         GridBagConstraints g = new GridBagConstraints();
+        g.gridwidth = 1;
+        g.gridheight = 1;
         g.weightx = 1;
         g.weighty = 1;
         add(contentPanel, BorderLayout.CENTER);
@@ -213,6 +215,8 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         JPanel module2 = new JPanel();
         JPanel module3 = new JPanel();
         JPanel module4 = new JPanel();
+        g.gridwidth = 2;
+        g.gridheight = 2;
         g.gridx = 2;
         g.gridy = 2;
         contentPanel.add(module1, g);
@@ -227,9 +231,11 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         g.gridx = 7;
         contentPanel.add(module3, g);
         modules.add(module3);
+        g.gridwidth = 1;
+        g.gridheight = 1;
         g.gridx = 11;
         g.gridy = 7;
-        contentPanel.add(Box.createGlue(), g);
+        contentPanel.add(new JLabel(), g);
         return modules;
     }
 
