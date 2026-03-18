@@ -89,8 +89,20 @@ public class Controller implements DeviceInterface {
         mappings[curMapping].setComponent(index, code);
     }
 
+    public SerialPort getPort() {
+        return port;
+    }
+
     public void setPort(SerialPort other) {
         port = other;
+    }
+
+    public void setCurrentMapping(int mapping) {
+        curMapping = mapping;
+    }
+
+    public int getCurrentMapping() {
+        return curMapping;
     }
 
     // DeviceInterface implementations

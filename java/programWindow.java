@@ -44,15 +44,15 @@ public class programWindow{
             public void actionPerformed(ActionEvent e) {
                 input = false;
                 byte[] data = controller.readMappings();
-                for (int i = controller.getMappingCount() - 1; i >= 0; i--) {
+                for (int i = 0; i < controller.getMappingCount(); i--) {
                     byte[] dataPiece = new byte[data.length / controller.getMappingCount()];
                     System.arraycopy(data, data.length * i / controller.getMappingCount(), dataPiece, 0, dataPiece.length);
                     Mapping mapping = Mapping.generateMapping(dataPiece, controller.getModuleCount(), controller.getMacroCount());
                     controller.setMapping(
-                            i,
-                            mapping
+                        i,
+                        mapping
                     );
-                    parent.setMapping(mapping); // Mappings read backwards to preserve module dropdowns here
+                    parent.setMapping(i, mapping);
                 }
                 info.setText("Loaded controller mappings!");
                 input = true;

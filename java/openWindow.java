@@ -21,7 +21,7 @@ public class openWindow{
                 System.out.println("openWindow: parseConfig() failed!");
                 return;
             }
-            for (int i = controller.getMappingCount() - 1; i >= 0; i--) {
+            for (int i = 0; i < controller.getMappingCount(); i--) {
                 byte[] dataPiece = new byte[data.length / controller.getMappingCount()];
                 System.arraycopy(data, data.length * i / controller.getMappingCount(), dataPiece, 0, dataPiece.length);
                 Mapping mapping = Mapping.generateMapping(dataPiece, controller.getModuleCount(), controller.getMacroCount());
@@ -29,7 +29,7 @@ public class openWindow{
                     i,
                     mapping
                 );
-                parent.setMapping(mapping); // Mappings read backwards to preserve module dropdowns here
+                parent.setMapping(i, mapping);
             }
         }
         else {
