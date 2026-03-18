@@ -33,7 +33,7 @@ public abstract class USBController {
         port.setComPortTimeouts(
             SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING,
             1000,
-            0
+            1000
         );
 
         return port.openPort();
@@ -50,7 +50,7 @@ public abstract class USBController {
         port.setComPortTimeouts(
             SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING,
             1000,
-            0
+            1000
         );
 
         return port.openPort();
@@ -69,5 +69,16 @@ public abstract class USBController {
             return false;
         }
         return buffer.length == port.writeBytes(buffer, buffer.length);
+    }
+
+    public static boolean fillBuffer(byte[] data) {
+        System.arraycopy(data, 0, buffer, 0, Math.min(data.length, buffer.length));
+        return buffer.length >= data.length;
+    }
+
+    public static byte[] retrieveBuffer() {
+        byte[] data = new byte[buffer.length];
+        System.arraycopy(buffer, 0, data, 0, buffer.length);
+        return data;
     }
 }

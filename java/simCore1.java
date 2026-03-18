@@ -10,21 +10,29 @@ public class simCore1 implements simCore{
         return intermediateBuffer;
     }
 
+    public void init(){
+
+    }
+
+    public byte[] getpartMap(){
+        return partMap;
+    }
+
     @Override
     public void simulate() {
-        if ((System.currentTimeMillis() - 2) >= 1) {
+        if ((System.currentTimeMillis() - timeSinceLast) >= 1) {
             return;
         }
 
-        for(int i = 0; i < 6; i++){
-            for(int j = 0; j < 8; j++){
-                intermediateBuffer[i][j]=0;
-            }
-        }
+        clearBuffer();
+
 
         for (int i = 0; i < 4; i++) {
             pollModule(i);
         }
+
+        intermediateBuffer[5][0] = pollIntegralButtons();
+        intermediateBuffer[6] = pollIntegratedTriggers();
 
 
     }
@@ -108,5 +116,23 @@ public class simCore1 implements simCore{
 
     public byte[] getPartMap(){
         return partMap;
+    }
+
+    private void clearBuffer(){
+        for(int i = 0; i < 6; i++){
+            for(int j = 0; j < 8; j++){
+                intermediateBuffer[i][j]=0;
+            }
+        }
+    }
+
+    private byte pollIntegralButtons(){
+        byte buttonData = 0;
+        return buttonData;
+    }
+
+    private byte[] pollIntegratedTriggers(){
+        byte[] triggerData = new byte[8];
+        return triggerData;
     }
 }
