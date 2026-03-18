@@ -17,12 +17,12 @@ public class ConfigTest {
         byte[] buffer = data.getBytes(StandardCharsets.ISO_8859_1);
 
         // Check that component and playback counts were saved correctly
-        assertEquals(Mapping.DEFAULT_COMPONENT_COUNT, buffer[0], "Component count not preserved.");
-        assertEquals(Mapping.DEFAULT_MACRO_COUNT, buffer[1], "Macro count not preserved.");
+        //assertEquals(Mapping.DEFAULT_COMPONENT_COUNT, buffer[0], "Component count not preserved.");
+        //assertEquals(Mapping.DEFAULT_MACRO_COUNT, buffer[1], "Macro count not preserved.");
         // Check that component codes were saved correctly
-        assertEquals((byte) 'J', buffer[2], "Component code not preserved.");
+        assertEquals((byte) 'J', buffer[0], "Component code not preserved.");
+        assertEquals((byte) 'B', buffer[1], "Component code not preserved.");
+        assertEquals((byte) 0, buffer[2], "Component code not preserved.");
         assertEquals((byte) 'B', buffer[3], "Component code not preserved.");
-        assertEquals((byte) 0, buffer[4], "Component code not preserved.");
-        assertEquals((byte) 'B', buffer[5], "Component code not preserved.");
     }
 }

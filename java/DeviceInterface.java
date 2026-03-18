@@ -10,12 +10,24 @@ public interface DeviceInterface {
     // Device disconnect function
     public boolean disconnect();
 
+    // Checks how many bytes are ready to be read
+    public int inputBuffer();
+
     // Reads data sent by the device to identify modules
     public byte[] readHardware();
+
+    // Reads data sent by the device in the form of configurations
+    public byte[] readMappings();
 
     // Reads input buffer sent by the device to verify functioning
     public byte[] readInput();
 
     // Sends module, mapping, and configuration data to the device
-    public boolean sendConfig(byte[] data);
+    public boolean sendConfigs();
+
+    // Wipes configuration data from the controller
+    public boolean wipeMappings();
+
+    // Runs hardware tests and displays output
+    public byte[] runTests();
 }

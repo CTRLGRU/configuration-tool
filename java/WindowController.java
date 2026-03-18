@@ -11,17 +11,22 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
     private JPanel contentPanel = new BackgroundPanel(System.getProperty("user.dir")+"/assets/bg.jpg");
     private Controller Pcontroller;
     private List<JComboBox<String>> dropdowns;
+    private List<JTextArea> inputs;
     public String version = "0.2.0";
 
     public WindowController(Controller controller){
         super("Controller Window");
         Pcontroller = controller;
         dropdowns = new ArrayList<JComboBox<String>>(controller.getModuleCount());
-        USBController.initialize(1024);
+        inputs = new ArrayList<JTextArea>(controller.getModuleCount());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
         //Panel inside the window
+        contentPanel.setLayout(new GridBagLayout());
+        GridBagConstraints g = new GridBagConstraints();
+        g.weightx = 1;
+        g.weighty = 1;
         add(contentPanel, BorderLayout.CENTER);
         //This is where components of the panel go, it should be a sub-panel instantiation of it
         //Below is the main controls (middle)
@@ -52,7 +57,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // OPEN MENU
         JMenuItem openMenuItem = new JMenuItem("Open");
         openMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
-        openMenuItem.addActionListener(e -> new openWindow(this)); //Where you add the OPEN functionality
+        openMenuItem.addActionListener(e -> new openWindow(this, Pcontroller)); //Where you add the OPEN functionality
         fileMenu.add(openMenuItem);
         // SAVE MENU
         JMenuItem saveMenuItem = new JMenuItem("Save");
@@ -85,7 +90,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // OPTIONS MENU SUB ITEMS
         // PROGRAM
         JMenuItem programMenuItem = new JMenuItem("Program");
-        programMenuItem.addActionListener(e -> new programWindow());
+        programMenuItem.addActionListener(e -> new programWindow(this, Pcontroller));
         optionMenu.add(programMenuItem);
         // UPDATE
         JMenuItem updateMenuItem = new JMenuItem("Update");
@@ -100,12 +105,24 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         aboutMenuItem.addActionListener(e -> new aboutWindow(version));
         optionMenu.add(aboutMenuItem);
         // DEVICE MENU SUB ITEMS
+        JMenuItem simToggle = new JMenuItem("Simulation");
+        simToggle.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Pcontroller.disconnect();
+                Pcontroller.setPort(null); // Internal behavior changes when Controller.port == null
+            }
+        });
+        deviceMenu.add(simToggle);
         SerialPort[] ports = USBController.scan();
         for (SerialPort port : ports) {
             JMenuItem item = new JMenuItem(port.getDescriptivePortName());
             item.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
-                    USBController.open(port.getSystemPortName(), 9600);
+                    Pcontroller.disconnect();
+                    Pcontroller.setPort(port);
+                    Pcontroller.connect(9600); // Can probably be higher, i.e. 115.2k
                 }
             });
             deviceMenu.add(item);
@@ -156,9 +173,32 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     }
                 }
             });
-            contentPanel.add(dropdown, BorderLayout.SOUTH);
+            g.gridx = i;
+            g.gridy = 1;
+            contentPanel.add(dropdown, g);
             dropdowns.add(dropdown);
+            g.gridx = 2 * i;
+            g.gridy = 0;
+            contentPanel.add(new JLabel("Module " + (i + 1) + ":"));
+            g.gridx = 2 * i + 1;
+            JTextArea input = new JTextArea("" + i);
+            inputs.add(input);
+            contentPanel.add(input, g);
         }
+
+        // Below code block assumes default 4-module setup with 2 hardwired triggers
+        g.gridx = 8;
+        g.gridy = 0;
+        contentPanel.add(new JLabel("Trigger 1:"));
+        g.gridx = 9;
+        inputs.add(new JTextArea("T1"));
+        contentPanel.add(inputs.getLast(), g);
+        g.gridx = 10;
+        contentPanel.add(new JLabel("Trigger 2:"));
+        g.gridx = 11;
+        inputs.add(new JTextArea("T2"));
+        contentPanel.add(inputs.getLast(), g);
+        List<JPanel> modules = setupModules(g);
 
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
@@ -167,13 +207,62 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         setVisible(true);
     }
 
-    public void run(){
-        //should be overridden
+    private List<JPanel> setupModules(GridBagConstraints g) { // Defaults to the 4-module setup for a 1200x800 window
+        List<JPanel> modules = new ArrayList<JPanel>(4);
+        JPanel module1 = new JPanel();
+        JPanel module2 = new JPanel();
+        JPanel module3 = new JPanel();
+        JPanel module4 = new JPanel();
+        g.gridx = 2;
+        g.gridy = 2;
+        contentPanel.add(module1, g);
+        modules.add(module1);
+        g.gridx = 8;
+        contentPanel.add(module4, g);
+        modules.add(module4);
+        g.gridx = 3;
+        g.gridy = 4;
+        contentPanel.add(module2, g);
+        modules.add(module2);
+        g.gridx = 7;
+        contentPanel.add(module3, g);
+        modules.add(module3);
+        g.gridx = 11;
+        g.gridy = 7;
+        contentPanel.add(Box.createGlue(), g);
+        return modules;
     }
 
-    public void setMapping(Mapping mapping) {
+    private void updateModules(List<JPanel> modules, byte[] components) {
+        for (int i = 0; i < modules.size(); i++) {
+            switch(components[i]) {
+                case 'J':
+                    modules.set(i, new AnalogStickPanel(12));
+                    break;
+                case 'B':
+                    JPanel module = new JPanel(new GridBagLayout());
+                    GridBagConstraints g = new GridBagConstraints();
+                    g.weightx = 1;
+                    g.weighty = 1;
+                    g.gridx = 1;
+                    g.gridy = 0;
+                    module.add(new JToggleButton("Up"), g);
+                    g.gridy = 2;
+                    module.add(new JToggleButton("Down"), g);
+                    g.gridx = 0;
+                    g.gridy = 1;
+                    module.add(new JToggleButton("Left"), g);
+                    g.gridx = 2;
+                    module.add(new JToggleButton("Right"), g);
+                    modules.set(i, module);
+            }
+        }
+    }
+
+    public void setMapping(int ID, Mapping mapping) {
+        int current = Pcontroller.getCurrentMapping();
+        Pcontroller.setCurrentMapping(ID);
         for (int i = 0; i < Pcontroller.getModuleCount(); i++) {
-            System.out.println(mapping.getComponent(i));
             switch(mapping.getComponent(i)) {
                 case 'J':
                     Pcontroller.setComponent(i, (byte) 'J');
@@ -199,5 +288,12 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     dropdowns.get(i).setSelectedItem("");
             }
         }
+        Pcontroller.setCurrentMapping(current);
+    }
+
+    // Runnable implementations
+    @Override
+    public void run(){
+        //should be overridden
     }
 }
