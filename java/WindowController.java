@@ -123,7 +123,9 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
             item.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    Pcontroller.disconnect();
+                    if (Pcontroller.getPort() != null) {
+                        Pcontroller.disconnect();
+                    }
                     Pcontroller.setPort(port);
                     Pcontroller.connect(9600); // Can probably be higher, i.e. 115.2k
                 }
