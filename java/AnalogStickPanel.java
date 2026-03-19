@@ -9,30 +9,31 @@ public class AnalogStickPanel extends JPanel {
     private final int r;
 
     public AnalogStickPanel(int radius) {
+        x = 0;
+        y = 0;
         r = radius;
         setFocusable(true);
         setPreferredSize(new Dimension(200, 200));
+        setBackground(new Color(0, 0, 0, 0));
         MouseAdapter mouse = new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON2) {
-                    setStick(e.getX(), e.getY());
-                }
+            public void mouseClicked(MouseEvent e) { // Any click sets it
+                setStick(e.getX(), e.getY());
             }
 
             @Override
-            public void mouseReleased(MouseEvent e) {
+            public void mouseReleased(MouseEvent e) { // Releasing left-click unsets it
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    setStick(e.getX(), e.getY());
+                    setStick(getWidth() / 2, getHeight() / 2);
                 }
             }
 
             // MouseMotionListener events
             @Override
-            public void mouseDragged(MouseEvent e) {
+            public void mouseDragged(MouseEvent e) { // Left-click dragging sets it
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    setStick(getWidth() / 2, getHeight() / 2);
+                    setStick(e.getX(), e.getY());
                 }
             }
         };
@@ -71,7 +72,7 @@ public class AnalogStickPanel extends JPanel {
     }
 
     public double getMaxDistance() {
-        return getWidth() - r; // ALl the way to one side
+        return getWidth() - r; // All the way to one side
     }
 
     public void setStick(int xStick, int yStick) {
@@ -92,8 +93,8 @@ public class AnalogStickPanel extends JPanel {
 
         g.setColor(Color.LIGHT_GRAY);
         g.fillOval(
-            x - r,
-            y - r,
+            getWidth() / 2 + x - r,
+            getHeight() / 2 + y - r,
             r * 2,
             r * 2
         );

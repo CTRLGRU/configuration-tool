@@ -23,13 +23,13 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         setLayout(new BorderLayout());
 
         //Panel inside the window
-        contentPanel.setLayout(new GridBagLayout());
-        GridBagConstraints g = new GridBagConstraints();
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.gridwidth = 1;
-        g.gridheight = 1;
-        g.weightx = 1;
-        g.weighty = 1;
+        contentPanel.setLayout(new GridLayout(0, 6)); // Number of columns only matters when number of rows is unset???
+        contentPanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                contentPanel.repaint();
+            }
+        });
         add(contentPanel, BorderLayout.CENTER);
         //This is where components of the panel go, it should be a sub-panel instantiation of it
         //Below is the main controls (middle)
@@ -130,13 +130,6 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
             });
             deviceMenu.add(item);
         }
-        //Once we have our panels set, we add a component listener
-        contentPanel.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                contentPanel.repaint();
-            }
-        });
         setJMenuBar(menuBar);
         String[] modulesD1 = {" ","Joystick", "DPad", "ABXY"};
         //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations.
@@ -176,36 +169,40 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     }
                 }
             });
-            g.fill = GridBagConstraints.HORIZONTAL;
-            g.gridx = i;
-            g.gridy = 1;
-            contentPanel.add(dropdown, g);
+            JPanel moduleSettings = new JPanel(new GridLayout(2, 2));
+            moduleSettings.setBackground(new Color(0, 0, 0, 0));
+            JTextArea input = new JTextArea();
+            moduleSettings.add(dropdown);
+            moduleSettings.add(new JLabel("Module " + (i + 1) + ":"));
+            moduleSettings.add(new JLabel());
+            moduleSettings.add(input);
+            contentPanel.add(moduleSettings);
             dropdowns.add(dropdown);
-            g.gridx = 2 * i;
-            g.gridy = 0;
-            contentPanel.add(new JLabel("Module " + (i + 1) + ":"));
-            g.fill = GridBagConstraints.BOTH;
-            g.gridx = 2 * i + 1;
-            JTextArea input = new JTextArea("" + i);
             inputs.add(input);
-            contentPanel.add(input, g);
         }
 
         // Below code block assumes default 4-module setup with 2 hardwired triggers
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.gridx = 8;
-        g.gridy = 0;
-        contentPanel.add(new JLabel("Trigger 1:"));
-        g.fill = GridBagConstraints.BOTH;
-        g.gridx = 9;
-        inputs.add(new JTextArea("T1"));
-        contentPanel.add(inputs.getLast(), g);
-        g.gridx = 10;
-        contentPanel.add(new JLabel("Trigger 2:"));
-        g.gridx = 11;
-        inputs.add(new JTextArea("T2"));
-        contentPanel.add(inputs.getLast(), g);
-        List<JPanel> modules = setupModules(g);
+        JPanel moduleSettings = new JPanel(new GridLayout(2, 2));
+        moduleSettings.setBackground(new Color(0, 0, 0, 0));
+        JTextArea input = new JTextArea();
+        moduleSettings.add(new JLabel());
+        moduleSettings.add(new JLabel("Trigger 1:"));
+        moduleSettings.add(new JLabel());
+        moduleSettings.add(input);
+        contentPanel.add(moduleSettings);
+        inputs.add(input);
+
+        moduleSettings = new JPanel(new GridLayout(2, 2));
+        moduleSettings.setBackground(new Color(0, 0, 0, 0));
+        input = new JTextArea();
+        moduleSettings.add(new JLabel());
+        moduleSettings.add(new JLabel("Trigger 2:"));
+        moduleSettings.add(new JLabel());
+        moduleSettings.add(input);
+        contentPanel.add(moduleSettings);
+        inputs.add(input);
+
+        List<JPanel> modules = setupModules();
 
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
@@ -214,50 +211,29 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         setVisible(true);
     }
 
-    private List<JPanel> setupModules(GridBagConstraints g) { // Defaults to the 4-module setup for a 1200x800 window
+    private List<JPanel> setupModules() { // Defaults to the 4-module setup for a 1200x800 window
         List<JPanel> modules = new ArrayList<JPanel>(4);
-        JPanel module1 = new JPanel(new GridLayout(3, 3));
-        module1.add(new JLabel());
-        module1.add(new JButton("Up"));
-        module1.add(new JLabel());
-        module1.add(new JButton("Left"));
-        module1.add(new JLabel());
-        module1.add(new JButton("Right"));
-        module1.add(new JLabel());
-        module1.add(new JButton("Down"));
+        ButtonPanel module1 = new ButtonPanel("Up", "Left", "Right", "Down");
         AnalogStickPanel module2 = new AnalogStickPanel(25);
         AnalogStickPanel module3 = new AnalogStickPanel(25);
-        JPanel module4 = new JPanel(new GridLayout(3, 3));
-        module4.add(new JLabel());
-        module4.add(new JButton("Y"));
-        module4.add(new JLabel());
-        module4.add(new JButton("X"));
-        module4.add(new JLabel());
-        module4.add(new JButton("B"));
-        module4.add(new JLabel());
-        module4.add(new JButton("A"));
-        g.fill = GridBagConstraints.BOTH;
-        g.gridwidth = 2;
-        g.gridheight = 2;
-        g.gridx = 2;
-        g.gridy = 2;
-        contentPanel.add(module1, g);
+        ButtonPanel module4 = new ButtonPanel("Y", "X", "B", "A");
+        contentPanel.add(new JLabel()); // Row 2 of 200x200 panels
+        contentPanel.add(module1);
+        contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel());
+        contentPanel.add(module4);
+        contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel()); // Row 3 of 200x200 panels
+        contentPanel.add(new JLabel());
+        contentPanel.add(module2);
+        contentPanel.add(module3);
+        contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel()); // Row 4 exists
         modules.add(module1);
-        g.gridx = 8;
-        contentPanel.add(module4, g);
-        modules.add(module4);
-        g.gridx = 3;
-        g.gridy = 4;
-        contentPanel.add(module2, g);
         modules.add(module2);
-        g.gridx = 7;
-        contentPanel.add(module3, g);
         modules.add(module3);
-        g.gridwidth = 1;
-        g.gridheight = 1;
-        g.gridx = 11;
-        g.gridy = 7;
-        contentPanel.add(new JLabel(), g);
+        modules.add(module4);
         return modules;
     }
 
