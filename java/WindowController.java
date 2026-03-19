@@ -25,6 +25,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         //Panel inside the window
         contentPanel.setLayout(new GridBagLayout());
         GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.HORIZONTAL;
         g.gridwidth = 1;
         g.gridheight = 1;
         g.weightx = 1;
@@ -175,6 +176,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     }
                 }
             });
+            g.fill = GridBagConstraints.HORIZONTAL;
             g.gridx = i;
             g.gridy = 1;
             contentPanel.add(dropdown, g);
@@ -182,6 +184,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
             g.gridx = 2 * i;
             g.gridy = 0;
             contentPanel.add(new JLabel("Module " + (i + 1) + ":"));
+            g.fill = GridBagConstraints.BOTH;
             g.gridx = 2 * i + 1;
             JTextArea input = new JTextArea("" + i);
             inputs.add(input);
@@ -189,9 +192,11 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         }
 
         // Below code block assumes default 4-module setup with 2 hardwired triggers
+        g.fill = GridBagConstraints.HORIZONTAL;
         g.gridx = 8;
         g.gridy = 0;
         contentPanel.add(new JLabel("Trigger 1:"));
+        g.fill = GridBagConstraints.BOTH;
         g.gridx = 9;
         inputs.add(new JTextArea("T1"));
         contentPanel.add(inputs.getLast(), g);
@@ -211,10 +216,27 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
 
     private List<JPanel> setupModules(GridBagConstraints g) { // Defaults to the 4-module setup for a 1200x800 window
         List<JPanel> modules = new ArrayList<JPanel>(4);
-        JPanel module1 = new JPanel();
-        JPanel module2 = new JPanel();
-        JPanel module3 = new JPanel();
-        JPanel module4 = new JPanel();
+        JPanel module1 = new JPanel(new GridLayout(3, 3));
+        module1.add(new JLabel());
+        module1.add(new JButton("Up"));
+        module1.add(new JLabel());
+        module1.add(new JButton("Left"));
+        module1.add(new JLabel());
+        module1.add(new JButton("Right"));
+        module1.add(new JLabel());
+        module1.add(new JButton("Down"));
+        AnalogStickPanel module2 = new AnalogStickPanel(25);
+        AnalogStickPanel module3 = new AnalogStickPanel(25);
+        JPanel module4 = new JPanel(new GridLayout(3, 3));
+        module4.add(new JLabel());
+        module4.add(new JButton("Y"));
+        module4.add(new JLabel());
+        module4.add(new JButton("X"));
+        module4.add(new JLabel());
+        module4.add(new JButton("B"));
+        module4.add(new JLabel());
+        module4.add(new JButton("A"));
+        g.fill = GridBagConstraints.BOTH;
         g.gridwidth = 2;
         g.gridheight = 2;
         g.gridx = 2;
@@ -239,7 +261,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         return modules;
     }
 
-    private void updateModules(List<JPanel> modules, byte[] components) {
+    /*private void updateModules(List<JPanel> modules, byte[] components) {
         for (int i = 0; i < modules.size(); i++) {
             switch(components[i]) {
                 case 'J':
@@ -263,7 +285,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     modules.set(i, module);
             }
         }
-    }
+    } // GUI is too finincky for me to update these on the fly, I have found */
 
     public void setMapping(int ID, Mapping mapping) {
         int current = Pcontroller.getCurrentMapping();

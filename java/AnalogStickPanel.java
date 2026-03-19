@@ -10,6 +10,7 @@ public class AnalogStickPanel extends JPanel {
 
     public AnalogStickPanel(int radius) {
         r = radius;
+        setFocusable(true);
         setPreferredSize(new Dimension(200, 200));
         MouseAdapter mouse = new MouseAdapter() {
             // MouseListener events
