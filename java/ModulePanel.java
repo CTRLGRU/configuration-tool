@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.nio.charset.StandardCharsets;
 
 public class ModulePanel extends JPanel {
     private JComboBox<String> pModule;
@@ -12,9 +13,10 @@ public class ModulePanel extends JPanel {
         setPreferredSize(new Dimension(200, 200));
         setBackground(new Color(0, 0, 0, 0));
 
-        add(new JLabel(name));
+        add(new JLabel(name, SwingConstants.CENTER));
         JPanel dropdowns = new JPanel(new GridLayout(1, 2));
         pModule = new JComboBox<String>(physical);
+        pModule.setBackground(Color.LIGHT_GRAY);
         dropdowns.add(pModule);
         vModule = new JComboBox<String>(virtual);
         dropdowns.add(vModule);
@@ -23,12 +25,24 @@ public class ModulePanel extends JPanel {
         pInput = new JTextArea();
         pInput.setEditable(false);
         pInput.setFocusable(false);
+        pInput.setBackground(Color.LIGHT_GRAY);
+        pInput.setMargin(new Insets(4, 4, 4, 4));
         data.add(pInput);
         vInput = new JTextArea();
         vInput.setEditable(false);
-        pInput.setFocusable(false);
+        vInput.setFocusable(false);
+        vInput.setBackground(Color.GRAY);
+        vInput.setMargin(new Insets(4, 4, 4, 4));
         data.add(vInput);
         add(data);
+    }
+
+    public JComboBox<String> getPhysicalDropdown() {
+        return pModule;
+    }
+
+    public JComboBox<String> getVirtualDropdown() {
+        return pModule;
     }
 
     public String getPhysical() {
@@ -57,7 +71,7 @@ public class ModulePanel extends JPanel {
 
     public void setPhysicalInput(byte[] data) {
         // Process bytes into human-readable results
-        pInput.setText("");
+        pInput.setText(new String(data, StandardCharsets.ISO_8859_1));
     }
 
     public void setVirtualInput(byte[] data) {

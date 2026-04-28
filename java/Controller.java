@@ -9,6 +9,7 @@ public class Controller implements DeviceInterface {
     private SerialPort port;
     private int curMapping = 0;
     private boolean raw = false;
+    private boolean macros = true;
 
     public Controller(int components, int configs, int macros, int triggerLen, int playbackLen) {
         mappings = new Mapping[configs];
@@ -41,6 +42,14 @@ public class Controller implements DeviceInterface {
                 modules[i].initialization();
             }
         }
+    }
+
+    public boolean isRaw() {
+        return raw;
+    }
+
+    public boolean macrosAllowed() {
+        return macros;
     }
 
     public int getModuleCount() {
@@ -278,7 +287,7 @@ public class Controller implements DeviceInterface {
         if (USBController.isNull()) {
             return false;
         }
-        byte[] command = {'R', 'A', 'W', 0};
+        byte[] command = {'S', 'E', 'T', 'M', 'O', 'D', 'E', 'R', 'A', 'W', 0};
         USBController.initialize(command.length);
         boolean success = USBController.fillBuffer(command);
         success = success && USBController.sendBuffer();
@@ -299,6 +308,21 @@ public class Controller implements DeviceInterface {
         success = success && USBController.sendBuffer();
         if (success) {
             raw = false;
+        }
+        return success;
+    }
+
+    @Override
+    public boolean toggleMacros() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'T', 'O', 'G', 'G', 'L', 'E', 'M', 'A', 'C', 'R', 'O', 'S', 0};
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        if (success) {
+            macros = !macros;
         }
         return success;
     }

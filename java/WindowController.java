@@ -132,6 +132,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
 
         String[] physical = {"", "Joystick", "DPad", "ABXY"};
         String[] virtual = {"", "Joystick", "4-Button"};
+        String[] trigger = {"Trigger"};
         modules[0] = new ModulePanel("Top-Left", physical, virtual);
         contentPanel.add(modules[0]);
         modules[1] = new ModulePanel("Top-Right", physical, virtual);
@@ -140,19 +141,39 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         contentPanel.add(modules[2]);
         modules[3] = new ModulePanel("Bottom-Left", physical, virtual);
         contentPanel.add(modules[3]);
-        modules[4] = new ModulePanel("Left Trigger", physical, virtual);
+        modules[4] = new ModulePanel("Left Trigger", trigger, trigger);
         contentPanel.add(modules[4]);
-        modules[5] = new ModulePanel("Right Trigger", physical, virtual);
+        modules[5] = new ModulePanel("Right Trigger", trigger, trigger);
         contentPanel.add(modules[5]);
 
-        List<JPanel> components = setupModules(); // These are at indices 7, 10, 16, and 13
-        /* This is how you'd edit an existing physical module, when the time comes
-        components.set(x, newModule);
-        contentPanel.remove(y);
-        contentPanel.add(components.get(x), y);
-        revalidate();
-        repaint();
-        */
+        List<JPanel> components = setupModules();
+        modules[0].getPhysicalDropdown().addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() != ItemEvent.SELECTED) {
+                    return;
+                }
+                updateModule(0, (String) e.getItem(), components);
+            }
+        });
+        modules[1].getPhysicalDropdown().addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED) {
+                return;
+            }
+            updateModule(1, (String) e.getItem(), components);
+        });
+        modules[2].getPhysicalDropdown().addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED) {
+                return;
+            }
+            updateModule(2, (String) e.getItem(), components);
+        });
+        modules[3].getPhysicalDropdown().addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED) {
+                return;
+            }
+            updateModule(3, (String) e.getItem(), components);
+        });
 
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
@@ -163,10 +184,14 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
 
     private List<JPanel> setupModules() { // Defaults to the 4-module setup for a 1200x800 window
         List<JPanel> modules = new ArrayList<JPanel>(4);
-        ButtonPanel module1 = new ButtonPanel("Up", "Left", "Right", "Down");
-        ButtonPanel module2 = new ButtonPanel("Y", "X", "B", "A");
-        AnalogStickPanel module3 = new AnalogStickPanel(25);
-        AnalogStickPanel module4 = new AnalogStickPanel(25);
+        JPanel module1 = new JPanel();
+        module1.setBackground(new Color(0, 0, 0, 0));
+        JPanel module2 = new JPanel();
+        module2.setBackground(new Color(0, 0, 0, 0));
+        JPanel module3 = new JPanel();
+        module3.setBackground(new Color(0, 0, 0, 0));
+        JPanel module4 = new JPanel();
+        module4.setBackground(new Color(0, 0, 0, 0));
         contentPanel.add(new JLabel()); // Row 2 of 200x200 panels
         contentPanel.add(module1);
         contentPanel.add(new JLabel());
@@ -185,6 +210,48 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         modules.add(module3);
         modules.add(module4);
         return modules;
+    }
+
+    private void updateModule(int index, String module, List<JPanel> components) {
+        int i;
+        switch(index) { // Get the appropriate GridLayout index i from component index
+            case 0:
+                i = 7;
+                break;
+            case 1:
+                i = 10;
+                break;
+            case 2:
+                i = 16;
+                break;
+            case 3:
+                i = 13;
+                break;
+            default:
+                i = 0;
+        }
+
+        JPanel updated;
+        switch(module) {
+            case "Joystick":
+                updated = new AnalogStickPanel(25);
+                break;
+            case "DPad":
+                updated = new ButtonPanel("Up", "Left", "Right", "Down");
+                break;
+            case "ABXY":
+                updated = new ButtonPanel("Y", "X", "B", "A");
+                break;
+            default:
+                updated = new JPanel();
+                updated.setBackground(new Color(0, 0, 0, 0));
+        }
+
+        components.set(index, updated);
+        contentPanel.remove(i);
+        contentPanel.add(components.get(index), i);
+        revalidate();
+        repaint();
     }
 
     private List<JRadioButtonMenuItem> refreshDevices() {
