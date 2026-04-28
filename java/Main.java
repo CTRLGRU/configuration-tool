@@ -4,6 +4,6 @@ public class Main {
     public static void main(String[] args) {
         Controller programController = new Controller();
         programController.initializeController();
-        SwingUtilities.invokeLater(new WindowController(programController));
+        WindowController windowController = new WindowController(programController, "0.3.0");
     }
 }

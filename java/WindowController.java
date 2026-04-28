@@ -9,16 +9,19 @@ import java.util.List;
 import java.util.ArrayList;
 
 // Window Class - this is where making variable instantiations of windows should be allowed to be created!
-public class WindowController extends JFrame implements ViewInterface, Runnable{
-    private JPanel contentPanel = new BackgroundPanel(System.getProperty("user.dir")+"/assets/bg.jpg");
+public class WindowController extends JFrame implements ViewInterface {
+    private final JPanel contentPanel = new BackgroundPanel(System.getProperty("user.dir")+"/assets/bg.jpg");
+    private DevicePoller poller;
     private Controller Pcontroller;
     private ModulePanel[] modules;
+    private List<VirtualModuleInterface> components;
     private ButtonGroup deviceChoices = new ButtonGroup();
-    public String version = "0.2.0";
+    public String version;
 
-    public WindowController(Controller controller){
+    public WindowController(Controller controller, String current){
         super("Controller Window");
         Pcontroller = controller;
+        version = current;
         modules = new ModulePanel[controller.getModuleCount() + 2]; // 4 replaceable modules and 2 triggers
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -132,6 +135,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
 
         String[] physical = {"", "Joystick", "DPad", "ABXY"};
         String[] virtual = {"", "Joystick", "4-Button"};
+        String[] trigger = {"Trigger"};
         modules[0] = new ModulePanel("Top-Left", physical, virtual);
         contentPanel.add(modules[0]);
         modules[1] = new ModulePanel("Top-Right", physical, virtual);
@@ -140,33 +144,61 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         contentPanel.add(modules[2]);
         modules[3] = new ModulePanel("Bottom-Left", physical, virtual);
         contentPanel.add(modules[3]);
-        modules[4] = new ModulePanel("Left Trigger", physical, virtual);
+        modules[4] = new ModulePanel("Left Trigger", trigger, trigger);
         contentPanel.add(modules[4]);
-        modules[5] = new ModulePanel("Right Trigger", physical, virtual);
+        modules[5] = new ModulePanel("Right Trigger", trigger, trigger);
         contentPanel.add(modules[5]);
 
-        List<JPanel> components = setupModules(); // These are at indices 7, 10, 16, and 13
-        /* This is how you'd edit an existing physical module, when the time comes
-        components.set(x, newModule);
-        contentPanel.remove(y);
-        contentPanel.add(components.get(x), y);
-        revalidate();
-        repaint();
-        */
+        components = setupModules();
+        modules[0].getPhysicalDropdown().addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() != ItemEvent.SELECTED) {
+                    return;
+                }
+                updateModule(0, (String) e.getItem());
+            }
+        });
+        modules[1].getPhysicalDropdown().addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED) {
+                return;
+            }
+            updateModule(1, (String) e.getItem());
+        });
+        modules[2].getPhysicalDropdown().addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED) {
+                return;
+            }
+            updateModule(2, (String) e.getItem());
+        });
+        modules[3].getPhysicalDropdown().addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED) {
+                return;
+            }
+            updateModule(3, (String) e.getItem());
+        });
 
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
         setContentPane(contentPanel);
         pack();
         setVisible(true);
+        poller = new DevicePoller(Pcontroller, modules, components);
+        Thread pollThread = new Thread(poller);
+        pollThread.setDaemon(true);
+        pollThread.start();
     }
 
-    private List<JPanel> setupModules() { // Defaults to the 4-module setup for a 1200x800 window
-        List<JPanel> modules = new ArrayList<JPanel>(4);
-        ButtonPanel module1 = new ButtonPanel("Up", "Left", "Right", "Down");
-        ButtonPanel module2 = new ButtonPanel("Y", "X", "B", "A");
-        AnalogStickPanel module3 = new AnalogStickPanel(25);
-        AnalogStickPanel module4 = new AnalogStickPanel(25);
+    private List<VirtualModuleInterface> setupModules() { // Defaults to the 4-module setup for a 1200x800 window
+        List<VirtualModuleInterface> comps = new ArrayList<VirtualModuleInterface>(4);
+        NothingPanel module1 = new NothingPanel();
+        module1.setBackground(new Color(0, 0, 0, 0));
+        NothingPanel module2 = new NothingPanel();
+        module2.setBackground(new Color(0, 0, 0, 0));
+        NothingPanel module3 = new NothingPanel();
+        module3.setBackground(new Color(0, 0, 0, 0));
+        NothingPanel module4 = new NothingPanel();
+        module4.setBackground(new Color(0, 0, 0, 0));
         contentPanel.add(new JLabel()); // Row 2 of 200x200 panels
         contentPanel.add(module1);
         contentPanel.add(new JLabel());
@@ -180,11 +212,52 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         contentPanel.add(module3);
         contentPanel.add(new JLabel());
         contentPanel.add(new JLabel()); // Row 4 exists
-        modules.add(module1);
-        modules.add(module2);
-        modules.add(module3);
-        modules.add(module4);
-        return modules;
+        comps.add(module1);
+        comps.add(module2);
+        comps.add(module3);
+        comps.add(module4);
+        return comps;
+    }
+
+    private void updateModule(int index, String module) {
+        int i;
+        switch(index) { // Get the appropriate GridLayout index i from component index
+            case 0:
+                i = 7;
+                break;
+            case 1:
+                i = 10;
+                break;
+            case 2:
+                i = 16;
+                break;
+            case 3:
+                i = 13;
+                break;
+            default:
+                i = 0;
+        }
+
+        VirtualModuleInterface updated;
+        switch(module) {
+            case "Joystick":
+                updated = new AnalogStickPanel(25);
+                break;
+            case "DPad":
+                updated = new ButtonPanel("Up", "Left", "Right", "Down");
+                break;
+            case "ABXY":
+                updated = new ButtonPanel("Y", "X", "B", "A");
+                break;
+            default:
+                updated = new NothingPanel();
+        }
+
+        components.set(index, updated);
+        contentPanel.remove(i);
+        contentPanel.add((JPanel) components.get(index), i);
+        revalidate();
+        repaint();
     }
 
     private List<JRadioButtonMenuItem> refreshDevices() {
@@ -254,11 +327,5 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
             }
         }
         Pcontroller.setCurrentMapping(current);
-    }
-
-    // Runnable implementations
-    @Override
-    public void run(){
-        //should be overridden
     }
 }

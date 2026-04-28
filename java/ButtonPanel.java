@@ -3,17 +3,21 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class ButtonPanel extends JPanel {
+public class ButtonPanel extends JPanel implements VirtualModuleInterface {
     private boolean up = false;
     private boolean down = false;
     private boolean left = false;
     private boolean right = false;
+    private JButton upBtn;
+    private JButton downBtn;
+    private JButton leftBtn;
+    private JButton rightBtn;
 
     public ButtonPanel(String topLabel, String leftLabel, String rightLabel, String bottomLabel) {
         super(new GridLayout(3, 3));
         setPreferredSize(new Dimension(200, 200));
         setBackground(new Color(0, 0, 0, 0));
-        final JButton upBtn = new JButton(topLabel);
+        upBtn = new JButton(topLabel);
         upBtn.setContentAreaFilled(false);
         upBtn.setOpaque(true);
         upBtn.setBackground(Color.LIGHT_GRAY);
@@ -34,11 +38,11 @@ public class ButtonPanel extends JPanel {
                     up = false;
                 } else if (e.getButton() == MouseEvent.BUTTON3) { // Toggle on right-click release
                     up = !up;
-                    upBtn.setBackground(up ? Color.LIGHT_GRAY : new Color(0, 191, 31));
+                    upBtn.setBackground(up ? new Color(0, 191, 31) : Color.LIGHT_GRAY);
                 }
             }
         });
-        final JButton leftBtn = new JButton(leftLabel);
+        leftBtn = new JButton(leftLabel);
         leftBtn.setContentAreaFilled(false);
         leftBtn.setOpaque(true);
         leftBtn.setBackground(Color.LIGHT_GRAY);
@@ -59,11 +63,11 @@ public class ButtonPanel extends JPanel {
                     left = false;
                 } else if (e.getButton() == MouseEvent.BUTTON3) { // Toggle on right-click release
                     left = !left;
-                    leftBtn.setBackground(left ? Color.LIGHT_GRAY : new Color(0, 191, 31));
+                    leftBtn.setBackground(left ? new Color(0, 191, 31) : Color.LIGHT_GRAY);
                 }
             }
         });
-        final JButton rightBtn = new JButton(rightLabel);
+        rightBtn = new JButton(rightLabel);
         rightBtn.setContentAreaFilled(false);
         rightBtn.setOpaque(true);
         rightBtn.setBackground(Color.LIGHT_GRAY);
@@ -84,11 +88,11 @@ public class ButtonPanel extends JPanel {
                     right = false;
                 } else if (e.getButton() == MouseEvent.BUTTON3) { // Toggle on right-click release
                     right = !right;
-                    rightBtn.setBackground(right ? Color.LIGHT_GRAY : new Color(0, 191, 31));
+                    rightBtn.setBackground(right ? new Color(0, 191, 31) : Color.LIGHT_GRAY);
                 }
             }
         });
-        final JButton downBtn = new JButton(bottomLabel);
+        downBtn = new JButton(bottomLabel);
         downBtn.setContentAreaFilled(false);
         downBtn.setOpaque(true);
         downBtn.setBackground(Color.LIGHT_GRAY);
@@ -109,7 +113,7 @@ public class ButtonPanel extends JPanel {
                     down = false;
                 } else if (e.getButton() == MouseEvent.BUTTON3) { // Toggle on right-click release
                     down = !down;
-                    downBtn.setBackground(down ? Color.LIGHT_GRAY : new Color(0, 191, 31));
+                    downBtn.setBackground(down ? new Color(0, 191, 31) : Color.LIGHT_GRAY);
                 }
             }
         });
@@ -139,6 +143,8 @@ public class ButtonPanel extends JPanel {
         return down;
     }
 
+    // VirtualModuleInterface implementations
+    @Override
     public byte[] getStatesAsOutput() {
         byte[] data = {0b01110000, 0, 0};
         if (up) {
@@ -154,5 +160,17 @@ public class ButtonPanel extends JPanel {
             data[0] |= 0b00000001;
         }
         return data;
+    }
+
+    @Override
+    public void getStatesFromInput(byte[] data) {
+        up = ((data[0] >> 3) & 1) == 1;
+        upBtn.setBackground(up ? new Color(0, 191, 31) : Color.LIGHT_GRAY);
+        down = ((data[0] >> 2) & 1) == 1;
+        downBtn.setBackground(up ? new Color(0, 191, 31) : Color.LIGHT_GRAY);
+        left = ((data[0] >> 1) & 1) == 1;
+        leftBtn.setBackground(up ? new Color(0, 191, 31) : Color.LIGHT_GRAY);
+        right = (data[0] & 1) == 1;
+        rightBtn.setBackground(up ? new Color(0, 191, 31) : Color.LIGHT_GRAY);
     }
 }

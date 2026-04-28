@@ -39,4 +39,7 @@ public interface DeviceInterface {
 
     // Set the controller to send USB gamepad data
     public boolean usbInputMode();
+
+    // Pretty self-explanatory based on the name
+    public boolean toggleMacros();
 }
