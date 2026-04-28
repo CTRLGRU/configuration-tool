@@ -20,16 +20,21 @@ public class ButtonPanel extends JPanel {
         upBtn.addMouseListener(new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mousePressed(MouseEvent e) { // Press on any click
-                upBtn.setBackground(new Color(0, 191, 31));
-                up = true;
+            public void mousePressed(MouseEvent e) { // Arm on left-click only
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    upBtn.setBackground(new Color(0, 191, 31));
+                    up = true;
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release only
+                if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release
                     upBtn.setBackground(Color.LIGHT_GRAY);
                     up = false;
+                } else if (e.getButton() == MouseEvent.BUTTON3) { // Toggle on right-click release
+                    up = !up;
+                    upBtn.setBackground(up ? Color.LIGHT_GRAY : new Color(0, 191, 31));
                 }
             }
         });
@@ -40,16 +45,21 @@ public class ButtonPanel extends JPanel {
         leftBtn.addMouseListener(new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mousePressed(MouseEvent e) { // Press on any click
-                leftBtn.setBackground(new Color(0, 191, 31));
-                left = true;
+            public void mousePressed(MouseEvent e) { // Arm on left-click only
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    leftBtn.setBackground(new Color(0, 191, 31));
+                    left = true;
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release only
+                if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release
                     leftBtn.setBackground(Color.LIGHT_GRAY);
                     left = false;
+                } else if (e.getButton() == MouseEvent.BUTTON3) { // Toggle on right-click release
+                    left = !left;
+                    leftBtn.setBackground(left ? Color.LIGHT_GRAY : new Color(0, 191, 31));
                 }
             }
         });
@@ -60,16 +70,21 @@ public class ButtonPanel extends JPanel {
         rightBtn.addMouseListener(new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mousePressed(MouseEvent e) { // Press on any click
-                rightBtn.setBackground(new Color(0, 191, 31));
-                right = true;
+            public void mousePressed(MouseEvent e) { // Arm on left-click only
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    rightBtn.setBackground(new Color(0, 191, 31));
+                    right = true;
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release only
+                if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release
                     rightBtn.setBackground(Color.LIGHT_GRAY);
                     right = false;
+                } else if (e.getButton() == MouseEvent.BUTTON3) { // Toggle on right-click release
+                    right = !right;
+                    rightBtn.setBackground(right ? Color.LIGHT_GRAY : new Color(0, 191, 31));
                 }
             }
         });
@@ -80,16 +95,21 @@ public class ButtonPanel extends JPanel {
         downBtn.addMouseListener(new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mousePressed(MouseEvent e) { // Press on any click
-                downBtn.setBackground(new Color(0, 191, 31));
-                down = true;
+            public void mousePressed(MouseEvent e) { // Arm on left-click only
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    downBtn.setBackground(new Color(0, 191, 31));
+                    down = true;
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release only
+                if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release
                     downBtn.setBackground(Color.LIGHT_GRAY);
                     down = false;
+                } else if (e.getButton() == MouseEvent.BUTTON3) { // Toggle on right-click release
+                    down = !down;
+                    downBtn.setBackground(down ? Color.LIGHT_GRAY : new Color(0, 191, 31));
                 }
             }
         });
@@ -119,20 +139,20 @@ public class ButtonPanel extends JPanel {
         return down;
     }
 
-    public byte getStatesAsOutput() {
-        byte value = 0;
+    public byte[] getStatesAsOutput() {
+        byte[] data = {0b01110000, 0, 0};
         if (up) {
-            value |= 0b00001000;
+            data[0] |= 0b00001000;
         }
         if (down) {
-            value |= 0b00000100;
+            data[0] |= 0b00000100;
         }
         if (left) {
-            value |= 0b00000010;
+            data[0] |= 0b00000010;
         }
         if (right) {
-            value |= 0b00000001;
+            data[0] |= 0b00000001;
         }
-        return value;
+        return data;
     }
 }

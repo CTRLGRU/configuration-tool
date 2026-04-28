@@ -18,6 +18,7 @@ public class ModulePanel extends JPanel {
         dropdowns.add(pModule);
         vModule = new JComboBox<String>(virtual);
         dropdowns.add(vModule);
+        add(dropdowns);
         JPanel data = new JPanel(new GridLayout(1, 2));
         pInput = new JTextArea();
         pInput.setEditable(false);
@@ -27,6 +28,7 @@ public class ModulePanel extends JPanel {
         vInput.setEditable(false);
         pInput.setFocusable(false);
         data.add(vInput);
+        add(data);
     }
 
     public String getPhysical() {

@@ -31,6 +31,9 @@ public interface DeviceInterface {
     // Runs hardware tests and displays output
     public byte[] runTests();
 
+    // Prompts the controller to recalibrate joysticks
+    public boolean recalibrate();
+
     // Set the controller to send raw input buffer data
     public boolean rawInputMode();
 

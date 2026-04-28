@@ -4,14 +4,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class AnalogStickPanel extends JPanel {
-    private int x;
-    private int y;
+    private int x = 0;
+    private int y = 0;
+    private boolean btn = false;
+    private Color color = Color.LIGHT_GRAY;
     private final int r;
-    private boolean lDown = false;
 
     public AnalogStickPanel(int radius) {
-        x = 0;
-        y = 0;
         r = radius;
         setFocusable(true);
         setPreferredSize(new Dimension(200, 200));
@@ -27,6 +26,9 @@ public class AnalogStickPanel extends JPanel {
             public void mouseReleased(MouseEvent e) { // Releasing left-click unsets it
                 if (e.getButton() == MouseEvent.BUTTON1) {
                     setStick(getWidth() / 2, getHeight() / 2);
+                } else if (e.getButton() == MouseEvent.BUTTON3) { // Right-click toggles button
+                    btn = !btn;
+                    color = btn ? Color.LIGHT_GRAY : new Color(0, 191, 31);
                 }
             }
 
@@ -48,20 +50,14 @@ public class AnalogStickPanel extends JPanel {
         return y;
     }
 
-    public int getXAsOutput(byte bits) {
-        if (bits <= 0) {
-            return 0;
+    public byte[] getStatesAsOutput() {
+        byte[] data = {0, 0, 0};
+        if (btn) {
+            data[0] |= 0b00000001;
         }
-        int max = (int) (Math.pow(2, bits)) - 1;
-        return (int) (max * x / getMaxDistance());
-    }
-
-    public int getYAsOutput(byte bits) {
-        if (bits <= 0) {
-            return 0;
-        }
-        int max = (int) (Math.pow(2, bits)) - 1;
-        return (int) (max * y / getMaxDistance());
+        data[0] |= ((byte) (128.0 * x / getMaxDistance()) << 1);
+        data[1] |= ((byte) (128.0 * y / getMaxDistance()) << 1);
+        return data;
     }
 
     public double getDistance() {
@@ -88,7 +84,7 @@ public class AnalogStickPanel extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        g.setColor(Color.LIGHT_GRAY);
+        g.setColor(color);
         g.fillOval(
             getWidth() / 2 + x - r,
             getHeight() / 2 + y - r,

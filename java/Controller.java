@@ -264,6 +264,16 @@ public class Controller implements DeviceInterface {
     }
 
     @Override
+    public boolean recalibrate() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'Z', 'E', 'R', 'O', 'J', 'O', 'Y', 'S', 0};
+        boolean success = USBController.fillBuffer(command);
+        return success && USBController.sendBuffer();
+    }
+
+    @Override
     public boolean rawInputMode() {
         if (USBController.isNull()) {
             return false;

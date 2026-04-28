@@ -12,16 +12,14 @@ import java.util.ArrayList;
 public class WindowController extends JFrame implements ViewInterface, Runnable{
     private JPanel contentPanel = new BackgroundPanel(System.getProperty("user.dir")+"/assets/bg.jpg");
     private Controller Pcontroller;
-    private List<JComboBox<String>> dropdowns;
-    private List<JTextArea> inputs;
+    private ModulePanel[] modules;
     private ButtonGroup deviceChoices = new ButtonGroup();
     public String version = "0.2.0";
 
     public WindowController(Controller controller){
         super("Controller Window");
         Pcontroller = controller;
-        dropdowns = new ArrayList<JComboBox<String>>(controller.getModuleCount());
-        inputs = new ArrayList<JTextArea>(controller.getModuleCount());
+        modules = new ModulePanel[controller.getModuleCount() + 2]; // 4 replaceable modules and 2 triggers
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -131,75 +129,30 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         optionMenu.add(aboutMenuItem);
 
         setJMenuBar(menuBar);
-        String[] modulesD1 = {" ","Joystick", "DPad", "ABXY"};
-        //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations.
-        for (int i = 0; i < controller.getModuleCount(); i++) {
-            final int iCopy = i;
-            JComboBox<String> dropdown = new JComboBox<String>(modulesD1);
-            dropdown.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    switch ((String) dropdowns.get(iCopy).getSelectedItem()) {
-                        case "Joystick":
-                            Pcontroller.setComponent(iCopy, (byte) 'J');
-                            Pcontroller.setModule(iCopy,2,1,"Joystick",
-                                "Joystick with a press button and two axes of analog movement."
-                            );
-                            break;
-                        case "DPad":
-                            Pcontroller.setComponent(iCopy, (byte) 'B');
-                            Pcontroller.setModule(iCopy,0,4,"DPad",
-                                "Four directional buttons intended to act as up or down and/or left or right."
-                            );
-                            break;
-                        case "ABXY":
-                            Pcontroller.setComponent(iCopy, (byte) 'B');
-                            Pcontroller.setModule(iCopy,0,4,"ABXY",
-                                "Four general-purpose buttons intended to act as A, B, X, and/or Y."
-                            );
-                            break;
-                        default:
-                            Pcontroller.setComponent(iCopy, (byte) 'X');
-                            Pcontroller.setModule(iCopy, 0, 0, "",
-                                "Unset or empty module."
-                            );
-                    }
-                }
-            });
-            JPanel moduleSettings = new JPanel(new GridLayout(2, 2));
-            moduleSettings.setBackground(new Color(0, 0, 0, 0));
-            JTextArea input = new JTextArea();
-            moduleSettings.add(dropdown);
-            moduleSettings.add(new JLabel("Module " + (i + 1) + ":"));
-            moduleSettings.add(new JLabel());
-            moduleSettings.add(input);
-            contentPanel.add(moduleSettings);
-            dropdowns.add(dropdown);
-            inputs.add(input);
-        }
 
-        // Below code block assumes default 4-module setup with 2 hardwired triggers
-        JPanel moduleSettings = new JPanel(new GridLayout(2, 2));
-        moduleSettings.setBackground(new Color(0, 0, 0, 0));
-        JTextArea input = new JTextArea();
-        moduleSettings.add(new JLabel());
-        moduleSettings.add(new JLabel("Trigger 1:"));
-        moduleSettings.add(new JLabel());
-        moduleSettings.add(input);
-        contentPanel.add(moduleSettings);
-        inputs.add(input);
+        String[] physical = {"", "Joystick", "DPad", "ABXY"};
+        String[] virtual = {"", "Joystick", "4-Button"};
+        modules[0] = new ModulePanel("Top-Left", physical, virtual);
+        contentPanel.add(modules[0]);
+        modules[1] = new ModulePanel("Top-Right", physical, virtual);
+        contentPanel.add(modules[1]);
+        modules[2] = new ModulePanel("Bottom-Right", physical, virtual);
+        contentPanel.add(modules[2]);
+        modules[3] = new ModulePanel("Bottom-Left", physical, virtual);
+        contentPanel.add(modules[3]);
+        modules[4] = new ModulePanel("Left Trigger", physical, virtual);
+        contentPanel.add(modules[4]);
+        modules[5] = new ModulePanel("Right Trigger", physical, virtual);
+        contentPanel.add(modules[5]);
 
-        moduleSettings = new JPanel(new GridLayout(2, 2));
-        moduleSettings.setBackground(new Color(0, 0, 0, 0));
-        input = new JTextArea();
-        moduleSettings.add(new JLabel());
-        moduleSettings.add(new JLabel("Trigger 2:"));
-        moduleSettings.add(new JLabel());
-        moduleSettings.add(input);
-        contentPanel.add(moduleSettings);
-        inputs.add(input);
-
-        List<JPanel> modules = setupModules();
+        List<JPanel> components = setupModules(); // These are at indices 7, 10, 16, and 13
+        /* This is how you'd edit an existing physical module, when the time comes
+        components.set(x, newModule);
+        contentPanel.remove(y);
+        contentPanel.add(components.get(x), y);
+        revalidate();
+        repaint();
+        */
 
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
@@ -211,17 +164,17 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
     private List<JPanel> setupModules() { // Defaults to the 4-module setup for a 1200x800 window
         List<JPanel> modules = new ArrayList<JPanel>(4);
         ButtonPanel module1 = new ButtonPanel("Up", "Left", "Right", "Down");
-        AnalogStickPanel module2 = new AnalogStickPanel(25);
+        ButtonPanel module2 = new ButtonPanel("Y", "X", "B", "A");
         AnalogStickPanel module3 = new AnalogStickPanel(25);
-        ButtonPanel module4 = new ButtonPanel("Y", "X", "B", "A");
+        AnalogStickPanel module4 = new AnalogStickPanel(25);
         contentPanel.add(new JLabel()); // Row 2 of 200x200 panels
         contentPanel.add(module1);
         contentPanel.add(new JLabel());
         contentPanel.add(new JLabel());
-        contentPanel.add(module4);
+        contentPanel.add(module2);
         contentPanel.add(new JLabel());
         contentPanel.add(new JLabel()); // Row 3 of 200x200 panels
-        contentPanel.add(module2);
+        contentPanel.add(module4);
         contentPanel.add(new JLabel());
         contentPanel.add(new JLabel());
         contentPanel.add(module3);
@@ -281,14 +234,14 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     Pcontroller.setModule(i, 2, 1, "Joystick",
                         "Joystick with a press button and two axes of analog movement."
                     );
-                    dropdowns.get(i).setSelectedItem("Joystick");
+                    modules[i].setVirtual("Joystick");
                     break;
                 case 'B':
                     Pcontroller.setComponent(i, (byte) 'B');
                     Pcontroller.setModule(i, 0, 4, "ABXY",
                         "Four general-purpose buttons intended to act as A, B, X, and/or Y."
                     );
-                    dropdowns.get(i).setSelectedItem("ABXY");
+                    modules[i].setVirtual("ABXY");
                     break;
                 case 'X':
                     Pcontroller.setComponent(i, (byte) 'X');
@@ -297,7 +250,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     );
                 default:
                     JOptionPane.showMessageDialog(contentPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
-                    dropdowns.get(i).setSelectedItem("");
+                    modules[i].setVirtual("");
             }
         }
         Pcontroller.setCurrentMapping(current);
