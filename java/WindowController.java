@@ -1,6 +1,8 @@
 import com.fazecast.jSerialComm.SerialPort;
 
 import javax.swing.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
@@ -10,18 +12,25 @@ import java.util.ArrayList;
 public class WindowController extends JFrame implements ViewInterface, Runnable{
     private JPanel contentPanel = new BackgroundPanel(System.getProperty("user.dir")+"/assets/bg.jpg");
     private Controller Pcontroller;
-    private List<JComboBox<String>> dropdowns;
+    private ModulePanel[] modules;
+    private ButtonGroup deviceChoices = new ButtonGroup();
     public String version = "0.2.0";
 
     public WindowController(Controller controller){
         super("Controller Window");
         Pcontroller = controller;
-        dropdowns = new ArrayList<JComboBox<String>>(controller.getModuleCount());
-        USBController.initialize(1024);
+        modules = new ModulePanel[controller.getModuleCount() + 2]; // 4 replaceable modules and 2 triggers
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
         //Panel inside the window
+        contentPanel.setLayout(new GridLayout(0, 6)); // Number of columns only matters when number of rows is unset???
+        contentPanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                contentPanel.repaint();
+            }
+        });
         add(contentPanel, BorderLayout.CENTER);
         //This is where components of the panel go, it should be a sub-panel instantiation of it
         //Below is the main controls (middle)
@@ -40,7 +49,26 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         optionMenu.setMnemonic(KeyEvent.VK_O);
         menuBar.add(optionMenu);
         JMenu deviceMenu = new JMenu("Devices");
-        optionMenu.setMnemonic(KeyEvent.VK_D);
+        deviceMenu.setMnemonic(KeyEvent.VK_D);
+        deviceMenu.addMenuListener(new MenuListener() {
+            @Override
+            public void menuSelected(MenuEvent e) {
+                List<JRadioButtonMenuItem> devices = refreshDevices();
+                for (int i = 0; i < devices.size(); i++) {
+                    deviceMenu.add(devices.get(i));
+                }
+            }
+
+            @Override
+            public void menuDeselected(MenuEvent e) {
+                deviceMenu.removeAll();
+            }
+
+            @Override
+            public void menuCanceled(MenuEvent e) {
+                deviceMenu.removeAll();
+            }
+        });
         menuBar.add(deviceMenu);
         //menu bar sub items
         // FILE MENU SUB ITEMS
@@ -52,7 +80,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // OPEN MENU
         JMenuItem openMenuItem = new JMenuItem("Open");
         openMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
-        openMenuItem.addActionListener(e -> new openWindow(this)); //Where you add the OPEN functionality
+        openMenuItem.addActionListener(e -> new openWindow(this, Pcontroller)); //Where you add the OPEN functionality
         fileMenu.add(openMenuItem);
         // SAVE MENU
         JMenuItem saveMenuItem = new JMenuItem("Save");
@@ -85,7 +113,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         // OPTIONS MENU SUB ITEMS
         // PROGRAM
         JMenuItem programMenuItem = new JMenuItem("Program");
-        programMenuItem.addActionListener(e -> new programWindow());
+        programMenuItem.addActionListener(e -> new programWindow(this, Pcontroller));
         optionMenu.add(programMenuItem);
         // UPDATE
         JMenuItem updateMenuItem = new JMenuItem("Update");
@@ -99,66 +127,32 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         JMenuItem aboutMenuItem = new JMenuItem("About");
         aboutMenuItem.addActionListener(e -> new aboutWindow(version));
         optionMenu.add(aboutMenuItem);
-        // DEVICE MENU SUB ITEMS
-        SerialPort[] ports = USBController.scan();
-        for (SerialPort port : ports) {
-            JMenuItem item = new JMenuItem(port.getDescriptivePortName());
-            item.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    USBController.open(port.getSystemPortName(), 9600);
-                }
-            });
-            deviceMenu.add(item);
-        }
-        //Once we have our panels set, we add a component listener
-        contentPanel.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                contentPanel.repaint();
-            }
-        });
+
         setJMenuBar(menuBar);
-        String[] modulesD1 = {" ","Joystick", "DPad", "ABXY"};
-        //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations.
-        for (int i = 0; i < controller.getModuleCount(); i++) {
-            final int iCopy = i;
-            JComboBox<String> dropdown = new JComboBox<String>(modulesD1);
-            dropdown.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    switch ((String) dropdowns.get(iCopy).getSelectedItem()) {
-                        case "Joystick":
-                            Pcontroller.setComponent(iCopy, (byte) 'J');
-                            Pcontroller.setModule(iCopy,2,1,"Joystick",
-                                "Joystick with a press button and two axes of analog movement."
-                            );
-                            break;
-                        case "DPad":
-                            Pcontroller.setComponent(iCopy, (byte) 'B');
-                            Pcontroller.setModule(iCopy,0,4,"DPad",
-                                "Four directional buttons intended to act as up or down and/or left or right."
-                            );
-                            break;
-                        case "ABXY":
-                            Pcontroller.setComponent(iCopy, (byte) 'B');
-                            Pcontroller.setModule(iCopy,0,4,"ABXY",
-                                "Four general-purpose buttons intended to act as A, B, X, and/or Y."
-                            );
-                            break;
-                        case "":
-                            Pcontroller.setComponent(iCopy, (byte) 'X');
-                            Pcontroller.setModule(iCopy, 0, 0, "",
-                                "Unset or empty module."
-                            );
-                            break;
-                        default:
-                            JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            });
-            contentPanel.add(dropdown, BorderLayout.SOUTH);
-            dropdowns.add(dropdown);
-        }
+
+        String[] physical = {"", "Joystick", "DPad", "ABXY"};
+        String[] virtual = {"", "Joystick", "4-Button"};
+        modules[0] = new ModulePanel("Top-Left", physical, virtual);
+        contentPanel.add(modules[0]);
+        modules[1] = new ModulePanel("Top-Right", physical, virtual);
+        contentPanel.add(modules[1]);
+        modules[2] = new ModulePanel("Bottom-Right", physical, virtual);
+        contentPanel.add(modules[2]);
+        modules[3] = new ModulePanel("Bottom-Left", physical, virtual);
+        contentPanel.add(modules[3]);
+        modules[4] = new ModulePanel("Left Trigger", physical, virtual);
+        contentPanel.add(modules[4]);
+        modules[5] = new ModulePanel("Right Trigger", physical, virtual);
+        contentPanel.add(modules[5]);
+
+        List<JPanel> components = setupModules(); // These are at indices 7, 10, 16, and 13
+        /* This is how you'd edit an existing physical module, when the time comes
+        components.set(x, newModule);
+        contentPanel.remove(y);
+        contentPanel.add(components.get(x), y);
+        revalidate();
+        repaint();
+        */
 
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
         setPreferredSize(new Dimension(1200, 800));
@@ -167,27 +161,87 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         setVisible(true);
     }
 
-    public void run(){
-        //should be overridden
+    private List<JPanel> setupModules() { // Defaults to the 4-module setup for a 1200x800 window
+        List<JPanel> modules = new ArrayList<JPanel>(4);
+        ButtonPanel module1 = new ButtonPanel("Up", "Left", "Right", "Down");
+        ButtonPanel module2 = new ButtonPanel("Y", "X", "B", "A");
+        AnalogStickPanel module3 = new AnalogStickPanel(25);
+        AnalogStickPanel module4 = new AnalogStickPanel(25);
+        contentPanel.add(new JLabel()); // Row 2 of 200x200 panels
+        contentPanel.add(module1);
+        contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel());
+        contentPanel.add(module2);
+        contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel()); // Row 3 of 200x200 panels
+        contentPanel.add(module4);
+        contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel());
+        contentPanel.add(module3);
+        contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel()); // Row 4 exists
+        modules.add(module1);
+        modules.add(module2);
+        modules.add(module3);
+        modules.add(module4);
+        return modules;
     }
 
-    public void setMapping(Mapping mapping) {
+    private List<JRadioButtonMenuItem> refreshDevices() {
+        List<JRadioButtonMenuItem> devices = new ArrayList<JRadioButtonMenuItem>();
+        deviceChoices = new ButtonGroup();
+
+        JRadioButtonMenuItem simToggle = new JRadioButtonMenuItem("Simulation");
+        simToggle.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Pcontroller.disconnect();
+                Pcontroller.setPort(null);
+            }
+        });
+        simToggle.setSelected(true);
+        deviceChoices.add(simToggle);
+        devices.add(simToggle);
+
+        SerialPort[] ports = USBController.scan();
+        for (SerialPort port : ports) {
+            JRadioButtonMenuItem item = new JRadioButtonMenuItem(port.getDescriptivePortName());
+            item.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Pcontroller.disconnect();
+                    Pcontroller.setPort(port);
+                    Pcontroller.connect(115200);
+                }
+            });
+            if (Pcontroller.getPort() == port) {
+                item.setSelected(true);
+            }
+            deviceChoices.add(item);
+            devices.add(item);
+        }
+
+        return devices;
+    }
+
+    public void setMapping(int ID, Mapping mapping) {
+        int current = Pcontroller.getCurrentMapping();
+        Pcontroller.setCurrentMapping(ID);
         for (int i = 0; i < Pcontroller.getModuleCount(); i++) {
-            System.out.println(mapping.getComponent(i));
             switch(mapping.getComponent(i)) {
                 case 'J':
                     Pcontroller.setComponent(i, (byte) 'J');
                     Pcontroller.setModule(i, 2, 1, "Joystick",
                         "Joystick with a press button and two axes of analog movement."
                     );
-                    dropdowns.get(i).setSelectedItem("Joystick");
+                    modules[i].setVirtual("Joystick");
                     break;
                 case 'B':
                     Pcontroller.setComponent(i, (byte) 'B');
                     Pcontroller.setModule(i, 0, 4, "ABXY",
                         "Four general-purpose buttons intended to act as A, B, X, and/or Y."
                     );
-                    dropdowns.get(i).setSelectedItem("ABXY");
+                    modules[i].setVirtual("ABXY");
                     break;
                 case 'X':
                     Pcontroller.setComponent(i, (byte) 'X');
@@ -196,8 +250,15 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                     );
                 default:
                     JOptionPane.showMessageDialog(contentPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
-                    dropdowns.get(i).setSelectedItem("");
+                    modules[i].setVirtual("");
             }
         }
+        Pcontroller.setCurrentMapping(current);
+    }
+
+    // Runnable implementations
+    @Override
+    public void run(){
+        //should be overridden
     }
 }

@@ -3,22 +3,34 @@ import com.fazecast.jSerialComm.SerialPort;
 import java.nio.charset.StandardCharsets;
 
 public class Controller implements DeviceInterface {
-    private SerialPort port;
-    private final Mapping mapping;
+    public static final int DEFAULT_CONFIG_COUNT = 3;
+    private final Mapping[] mappings;
     private final Component[] modules;
+    private SerialPort port;
+    private int curMapping = 0;
+    private boolean raw = false;
 
-    public Controller(int components, int macros, int triggerLen, int playbackLen) {
-        mapping = new Mapping(components, macros, triggerLen, playbackLen);
+    public Controller(int components, int configs, int macros, int triggerLen, int playbackLen) {
+        mappings = new Mapping[configs];
+        for (int i = 0; i < configs; i++) {
+            mappings[i] = new Mapping(components, macros, triggerLen, playbackLen);
+        }
         modules = new Component[components];
     }
 
-    public Controller(int components, int macros) {
-        mapping = new Mapping(components, macros);
+    public Controller(int components, int configs, int macros) {
+        mappings = new Mapping[configs];
+        for (int i = 0; i < configs; i++) {
+            mappings[i] = new Mapping(components, macros);
+        }
         modules = new Component[components];
     }
 
     public Controller() {
-        mapping = new Mapping();
+        mappings = new Mapping[DEFAULT_CONFIG_COUNT];
+        for (int i = 0; i < DEFAULT_CONFIG_COUNT; i++) {
+            mappings[i] = new Mapping(Mapping.DEFAULT_COMPONENT_COUNT, Mapping.DEFAULT_MACRO_COUNT);
+        }
         modules = new Component[Mapping.DEFAULT_COMPONENT_COUNT];
     }
 
@@ -47,50 +59,95 @@ public class Controller implements DeviceInterface {
         modules[index].setModuleNumber(index + 1);
         switch(name) {
             case "Joystick":
-                mapping.setComponent(index, (byte) 'J');
+                mappings[curMapping].setComponent(index, (byte) 'J');
                 break;
             case "DPad":
             case "ABXY":
-                mapping.setComponent(index, (byte) 'B');
+                mappings[curMapping].setComponent(index, (byte) 'B');
                 break;
             default:
-                mapping.setComponent(index, (byte) 0);
+                mappings[curMapping].setComponent(index, (byte) 0);
         }
     }
 
+    public Mapping getMapping(int index) {
+        return mappings[index];
+    }
+
+    public void setMapping(int index, Mapping mapping) {
+        mappings[index] = mapping;
+    }
+
+    public int getMappingCount() {
+        return mappings.length;
+    }
+
     public int getMacroCount() {
-        return mapping.getMacroCount();
+        return mappings[curMapping].getMacroCount();
     }
 
     public void setComponent(int index, byte code) {
-        mapping.setComponent(index, code);
+        mappings[curMapping].setComponent(index, code);
+    }
+
+    public SerialPort getPort() {
+        return port;
+    }
+
+    public void setPort(SerialPort other) {
+        port = other;
+    }
+
+    public void setCurrentMapping(int mapping) {
+        curMapping = mapping;
+    }
+
+    public int getCurrentMapping() {
+        return curMapping;
     }
 
     // DeviceInterface implementations
     @Override
     public String fileWriter(int ID) {
-        // Data includes 1 B per component, 1 B per playback length per playback per component, and 1 B
-        // per trigger length per trigger per component.
-        // Realized we should also have 1 B each for module and macro counts to properly read configs
+        // [Previous iteration not really in line with module-firmware repo]
+        // 1B per module + 1B per macro per trigger step per component (modules plus hardwired triggers)
+        // + 1B per macro per playback step per component = 4 + 8*(4 + 10)*6 = 676B per mapping
+        int count = 1;
+        if (ID < 0) {
+            count = DEFAULT_CONFIG_COUNT;
+            ID = 0;
+        } else if (ID >= mappings.length) {
+            ID = curMapping;
+        }
         byte[] data = new byte[
-            modules.length *
-            (1 + (mapping.getMacro(0).getTriggerLength() + mapping.getMacro(0).getPlaybackLength()) *
-            mapping.getMacroCount()) + 2
+            (modules.length + mappings[ID].getMacroCount() *
+            (mappings[ID].getMacro(0, 0).getTriggerLength() + mappings[ID].getMacro(0, 0).getPlaybackLength()) *
+            (mappings[ID].getComponentCount() + 2)) * count
         ];
-        data[0] = (byte) modules.length;
-        data[1] = (byte) mapping.getMacroCount();
-        int cur;
-        for (cur = 2; cur < modules.length + 2; cur++) {
-            data[cur] = mapping.getComponent(cur - 2);
-        }
-        for (int i = 0; i < mapping.getMacroCount(); i++) {
-            System.arraycopy(mapping.getMacro(i).getTrigger(), 0, data, cur, mapping.getMacro(i).getTriggerLength());
-            cur += mapping.getMacro(i).getTriggerLength();
-        }
-        for (int i = 0; i < mapping.getMacroCount(); i++) {
-            System.arraycopy(mapping.getMacro(i).getPlayback(), 0, data, cur, mapping.getMacro(i).getPlaybackLength());
-            cur += mapping.getMacro(i).getPlaybackLength();
-        }
+        int cur = 0;
+        do { // Do once no matter what
+            for (int i = 0; i < modules.length; i++) { // Copy component character codes
+                data[cur] = mappings[ID].getComponent(i);
+                cur++;
+            }
+            for (int i = 0; i < mappings[ID].getMacroCount(); i++) { // For every macro
+                for (int j = 0; j < mappings[ID].getMacro(i, 0).getTriggerLength(); j++) { // For every trigger step
+                    for (int k = 0; k < mappings[ID].getComponentCount() + 2; k++) { // For every component, copy a byte
+                        data[cur] = mappings[ID].getMacro(i, k).getTrigger()[j];
+                        cur++;
+                    }
+                }
+            }
+            for (int i = 0; i < mappings[ID].getMacroCount(); i++) { // For every macro
+                for (int j = 0; j < mappings[ID].getMacro(i, 0).getPlaybackLength(); j++) { // For every playback step
+                    for (int k = 0; k < mappings[ID].getComponentCount() + 2; k++) { // For every component, copy a byte
+                        data[cur] = mappings[ID].getMacro(i, k).getPlayback()[j];
+                        cur++;
+                    }
+                }
+            }
+            ID++;
+        } while(count != 1 && ID < mappings.length); // Only repeat if provided ID was negative, and is incomplete
         return new String(data, StandardCharsets.ISO_8859_1);
     }
 
@@ -104,18 +161,146 @@ public class Controller implements DeviceInterface {
         return USBController.close();
     }
 
-    // Need to look at module-firmware for communication
+    @Override
+    public int inputBuffer() {
+        if (USBController.isNull()) {
+            return -1;
+        }
+        return port.bytesAvailable();
+    }
+
     @Override
     public byte[] readHardware() {
-        return null;
+        if (USBController.isNull()) {
+            return new byte[1];
+        }
+        byte[] command = {'M','O','D','U','L','E','S',0}; // null-terminated "MODULES"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        USBController.initialize(modules.length);
+        success = success && USBController.readBytes(modules.length);
+        if (!success) { // Quick and dirty for now
+            System.out.println("Controller: readHardware() failed.");
+        }
+        return USBController.retrieveBuffer();
     }
+
+    @Override
+    public byte[] readMappings() {
+        if (USBController.isNull()) {
+            return new byte[1];
+        }
+        int size = (modules.length + mappings[curMapping].getMacroCount() *
+            (mappings[curMapping].getMacro(0, 0).getTriggerLength() + mappings[curMapping].getMacro(0, 0).getPlaybackLength()) *
+            (modules.length + 2)) * 3;
+        byte[] command = {'C','O','N','F','I','G','S',0}; // null-terminated "CONFIGS"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        USBController.initialize(size);
+        success = success && USBController.readBytes(size);
+        if (!success) { // Quick and dirty for now
+            System.out.println("Controller: readMapping() failed.");
+        }
+        return USBController.retrieveBuffer();
+    }
+
     @Override
     public byte[] readInput() {
-        return null;
+        if (USBController.isNull()) {
+            return new byte[1];
+        }
+        // 3 bytes per module or sizeof(hid_gamepad_report_t) from tinyusb's hid.h
+        int size = raw ? (modules.length + 2) * 3 : 12;
+        USBController.initialize(size);
+        if (!USBController.readBytes(size)) { // Quick and dirty for now
+            System.out.println("Controller: readInput() failed.");
+        }
+        return USBController.retrieveBuffer();
     }
+
     @Override
-    public boolean sendConfig(byte[] data) {
-        return false;
+    public boolean sendConfigs() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'S', 'A', 'V', 'E', 0}; // null-terminated "SAVE"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        String data = fileWriter(-1);
+        success = success && USBController.sendBuffer();
+        USBController.initialize(data.length());
+        success = success && USBController.fillBuffer(data.getBytes(StandardCharsets.ISO_8859_1));
+        return success && USBController.sendBuffer();
+    }
+
+    @Override
+    public boolean wipeMappings() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'W', 'I', 'P', 'E', 0}; // null-terminated "WIPE"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        return success && USBController.sendBuffer();
+    }
+
+    @Override
+    public byte[] runTests() {
+        if (USBController.isNull()) {
+            return new byte[1];
+        }
+        byte[] command = {'T','E','S','T',0}; // null-terminated "TEST"
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        USBController.initialize(1024);
+        success = success && USBController.readBytes(1024);
+        if (!success) { // Quick and dirty for now
+            System.out.println("Controller: runTests() failed.");
+        }
+        return USBController.retrieveBuffer();
+    }
+
+    @Override
+    public boolean recalibrate() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'Z', 'E', 'R', 'O', 'J', 'O', 'Y', 'S', 0};
+        boolean success = USBController.fillBuffer(command);
+        return success && USBController.sendBuffer();
+    }
+
+    @Override
+    public boolean rawInputMode() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'R', 'A', 'W', 0};
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        if (success) {
+            raw = true;
+        }
+        return success;
+    }
+
+    @Override
+    public boolean usbInputMode() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'S', 'E', 'T', 'M', 'O', 'D', 'E', 'U', 'S', 'B', 0};
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        if (success) {
+            raw = false;
+        }
+        return success;
     }
 
     // Fixed module count functions (backwards-compatibility)

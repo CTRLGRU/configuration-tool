@@ -5,6 +5,9 @@ public abstract class USBController {
     private static byte[] buffer;
 
     public static boolean close() {
+        if (isNull()) {
+            return true;
+        }
         return port.closePort();
     }
 
@@ -22,6 +25,10 @@ public abstract class USBController {
         buffer = new byte[bufferSize];
     }
 
+    public static boolean isNull() {
+        return port == null;
+    }
+
     public static boolean open(String name, int baud, int stopBits, int parity) {
         port = SerialPort.getCommPort(name);
         port.setComPortParameters(
@@ -33,7 +40,7 @@ public abstract class USBController {
         port.setComPortTimeouts(
             SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING,
             1000,
-            0
+            1000
         );
 
         return port.openPort();
@@ -50,7 +57,7 @@ public abstract class USBController {
         port.setComPortTimeouts(
             SerialPort.TIMEOUT_WRITE_BLOCKING | SerialPort.TIMEOUT_READ_BLOCKING,
             1000,
-            0
+            1000
         );
 
         return port.openPort();
@@ -65,9 +72,20 @@ public abstract class USBController {
     }
 
     public static boolean sendBuffer() {
-        if (port == null || !port.isOpen()) {
+        if (isNull() || !port.isOpen()) {
             return false;
         }
         return buffer.length == port.writeBytes(buffer, buffer.length);
+    }
+
+    public static boolean fillBuffer(byte[] data) {
+        System.arraycopy(data, 0, buffer, 0, Math.min(data.length, buffer.length));
+        return buffer.length >= data.length;
+    }
+
+    public static byte[] retrieveBuffer() {
+        byte[] data = new byte[buffer.length];
+        System.arraycopy(buffer, 0, data, 0, buffer.length);
+        return data;
     }
 }
