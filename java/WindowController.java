@@ -9,16 +9,19 @@ import java.util.List;
 import java.util.ArrayList;
 
 // Window Class - this is where making variable instantiations of windows should be allowed to be created!
-public class WindowController extends JFrame implements ViewInterface, Runnable{
-    private JPanel contentPanel = new BackgroundPanel(System.getProperty("user.dir")+"/assets/bg.jpg");
+public class WindowController extends JFrame implements ViewInterface {
+    private final JPanel contentPanel = new BackgroundPanel(System.getProperty("user.dir")+"/assets/bg.jpg");
+    private DevicePoller poller;
     private Controller Pcontroller;
     private ModulePanel[] modules;
+    private List<VirtualModuleInterface> components;
     private ButtonGroup deviceChoices = new ButtonGroup();
-    public String version = "0.2.0";
+    public String version;
 
-    public WindowController(Controller controller){
+    public WindowController(Controller controller, String current){
         super("Controller Window");
         Pcontroller = controller;
+        version = current;
         modules = new ModulePanel[controller.getModuleCount() + 2]; // 4 replaceable modules and 2 triggers
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -146,33 +149,33 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         modules[5] = new ModulePanel("Right Trigger", trigger, trigger);
         contentPanel.add(modules[5]);
 
-        List<JPanel> components = setupModules();
+        components = setupModules();
         modules[0].getPhysicalDropdown().addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() != ItemEvent.SELECTED) {
                     return;
                 }
-                updateModule(0, (String) e.getItem(), components);
+                updateModule(0, (String) e.getItem());
             }
         });
         modules[1].getPhysicalDropdown().addItemListener(e -> {
             if (e.getStateChange() != ItemEvent.SELECTED) {
                 return;
             }
-            updateModule(1, (String) e.getItem(), components);
+            updateModule(1, (String) e.getItem());
         });
         modules[2].getPhysicalDropdown().addItemListener(e -> {
             if (e.getStateChange() != ItemEvent.SELECTED) {
                 return;
             }
-            updateModule(2, (String) e.getItem(), components);
+            updateModule(2, (String) e.getItem());
         });
         modules[3].getPhysicalDropdown().addItemListener(e -> {
             if (e.getStateChange() != ItemEvent.SELECTED) {
                 return;
             }
-            updateModule(3, (String) e.getItem(), components);
+            updateModule(3, (String) e.getItem());
         });
 
         //We should set a default size to open at, I think 1200x800 makes sense in WxH
@@ -180,17 +183,21 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         setContentPane(contentPanel);
         pack();
         setVisible(true);
+        poller = new DevicePoller(Pcontroller, modules, components);
+        Thread pollThread = new Thread(poller);
+        pollThread.setDaemon(true);
+        pollThread.start();
     }
 
-    private List<JPanel> setupModules() { // Defaults to the 4-module setup for a 1200x800 window
-        List<JPanel> modules = new ArrayList<JPanel>(4);
-        JPanel module1 = new JPanel();
+    private List<VirtualModuleInterface> setupModules() { // Defaults to the 4-module setup for a 1200x800 window
+        List<VirtualModuleInterface> comps = new ArrayList<VirtualModuleInterface>(4);
+        NothingPanel module1 = new NothingPanel();
         module1.setBackground(new Color(0, 0, 0, 0));
-        JPanel module2 = new JPanel();
+        NothingPanel module2 = new NothingPanel();
         module2.setBackground(new Color(0, 0, 0, 0));
-        JPanel module3 = new JPanel();
+        NothingPanel module3 = new NothingPanel();
         module3.setBackground(new Color(0, 0, 0, 0));
-        JPanel module4 = new JPanel();
+        NothingPanel module4 = new NothingPanel();
         module4.setBackground(new Color(0, 0, 0, 0));
         contentPanel.add(new JLabel()); // Row 2 of 200x200 panels
         contentPanel.add(module1);
@@ -205,14 +212,14 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         contentPanel.add(module3);
         contentPanel.add(new JLabel());
         contentPanel.add(new JLabel()); // Row 4 exists
-        modules.add(module1);
-        modules.add(module2);
-        modules.add(module3);
-        modules.add(module4);
-        return modules;
+        comps.add(module1);
+        comps.add(module2);
+        comps.add(module3);
+        comps.add(module4);
+        return comps;
     }
 
-    private void updateModule(int index, String module, List<JPanel> components) {
+    private void updateModule(int index, String module) {
         int i;
         switch(index) { // Get the appropriate GridLayout index i from component index
             case 0:
@@ -231,7 +238,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                 i = 0;
         }
 
-        JPanel updated;
+        VirtualModuleInterface updated;
         switch(module) {
             case "Joystick":
                 updated = new AnalogStickPanel(25);
@@ -243,13 +250,12 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                 updated = new ButtonPanel("Y", "X", "B", "A");
                 break;
             default:
-                updated = new JPanel();
-                updated.setBackground(new Color(0, 0, 0, 0));
+                updated = new NothingPanel();
         }
 
         components.set(index, updated);
         contentPanel.remove(i);
-        contentPanel.add(components.get(index), i);
+        contentPanel.add((JPanel) components.get(index), i);
         revalidate();
         repaint();
     }
@@ -321,11 +327,5 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
             }
         }
         Pcontroller.setCurrentMapping(current);
-    }
-
-    // Runnable implementations
-    @Override
-    public void run(){
-        //should be overridden
     }
 }

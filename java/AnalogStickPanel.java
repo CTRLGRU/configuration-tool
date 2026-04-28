@@ -3,7 +3,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class AnalogStickPanel extends JPanel {
+public class AnalogStickPanel extends JPanel implements VirtualModuleInterface {
     private int x = 0;
     private int y = 0;
     private boolean btn = false;
@@ -28,7 +28,7 @@ public class AnalogStickPanel extends JPanel {
                     setStick(getWidth() / 2, getHeight() / 2);
                 } else if (e.getButton() == MouseEvent.BUTTON3) { // Right-click toggles button
                     btn = !btn;
-                    color = btn ? Color.LIGHT_GRAY : new Color(0, 191, 31);
+                    color = btn ? new Color(0, 191, 31) : Color.LIGHT_GRAY;
                 }
             }
 
@@ -50,16 +50,6 @@ public class AnalogStickPanel extends JPanel {
         return y;
     }
 
-    public byte[] getStatesAsOutput() {
-        byte[] data = {0, 0, 0};
-        if (btn) {
-            data[0] |= 0b00000001;
-        }
-        data[0] |= ((byte) (128.0 * x / getMaxDistance()) << 1);
-        data[1] |= ((byte) (128.0 * y / getMaxDistance()) << 1);
-        return data;
-    }
-
     public double getDistance() {
         return Math.sqrt(x * x + y * y);
     }
@@ -70,7 +60,7 @@ public class AnalogStickPanel extends JPanel {
 
     public void setStick(int xStick, int yStick) {
         x = xStick - getWidth() / 2; // Negative to the left, positive to the right
-        y = yStick - getHeight() / 2; // Negative to the bottom, positive to the top
+        y = getHeight() / 2 - yStick; // Negative to the bottom, positive to the top
         double scale = getMaxDistance() / getDistance();
         if (scale < 1) { // Scale if beyond regular bounds
             x = (int) (x * scale);
@@ -79,7 +69,30 @@ public class AnalogStickPanel extends JPanel {
         repaint();
     }
 
-    // JPanel re-implementations
+    // VirtualModuleInterface implementations
+    @Override
+    public byte[] getStatesAsOutput() {
+        byte[] data = {0, 0, 0};
+        if (btn) {
+            data[0] |= 0b00000001;
+        }
+        data[0] |= (byte) ((byte) (128.0 * x / getMaxDistance()) & 0b11111110);
+        data[1] |= (byte) ((byte) (128.0 * y / getMaxDistance()) & 0b11111110);
+        return data;
+    }
+
+    @Override
+    public void getStatesFromInput(byte[] data) {
+        btn = (data[0] & 1) == 1;
+        if (btn) {
+            color = new Color(0, 191, 31);
+        }
+        x = (int) ((double) (data[0] & 0b11111110) / 127.0 * getMaxDistance());
+        y = (int) ((double) (data[1] & 0b11111110) / 127.0 * getMaxDistance());
+        repaint();
+    }
+
+    // JPanel implementations
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -87,7 +100,7 @@ public class AnalogStickPanel extends JPanel {
         g.setColor(color);
         g.fillOval(
             getWidth() / 2 + x - r,
-            getHeight() / 2 + y - r,
+            getHeight() / 2 - y - r,
             r * 2,
             r * 2
         );

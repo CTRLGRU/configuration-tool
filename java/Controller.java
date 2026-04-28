@@ -10,6 +10,7 @@ public class Controller implements DeviceInterface {
     private int curMapping = 0;
     private boolean raw = false;
     private boolean macros = true;
+    private byte format = 0;
 
     public Controller(int components, int configs, int macros, int triggerLen, int playbackLen) {
         mappings = new Mapping[configs];
@@ -50,6 +51,10 @@ public class Controller implements DeviceInterface {
 
     public boolean macrosAllowed() {
         return macros;
+    }
+
+    public byte getFormat() {
+        return format;
     }
 
     public int getModuleCount() {
