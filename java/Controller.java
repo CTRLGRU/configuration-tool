@@ -8,6 +8,7 @@ public class Controller implements DeviceInterface {
     private final Component[] modules;
     private SerialPort port;
     private int curMapping = 0;
+    private boolean raw = false;
 
     public Controller(int components, int configs, int macros, int triggerLen, int playbackLen) {
         mappings = new Mapping[configs];
@@ -162,11 +163,17 @@ public class Controller implements DeviceInterface {
 
     @Override
     public int inputBuffer() {
+        if (USBController.isNull()) {
+            return -1;
+        }
         return port.bytesAvailable();
     }
 
     @Override
     public byte[] readHardware() {
+        if (USBController.isNull()) {
+            return new byte[1];
+        }
         byte[] command = {'M','O','D','U','L','E','S',0}; // null-terminated "MODULES"
         USBController.initialize(command.length);
         boolean success = USBController.fillBuffer(command);
@@ -181,6 +188,9 @@ public class Controller implements DeviceInterface {
 
     @Override
     public byte[] readMappings() {
+        if (USBController.isNull()) {
+            return new byte[1];
+        }
         int size = (modules.length + mappings[curMapping].getMacroCount() *
             (mappings[curMapping].getMacro(0, 0).getTriggerLength() + mappings[curMapping].getMacro(0, 0).getPlaybackLength()) *
             (modules.length + 2)) * 3;
@@ -198,7 +208,11 @@ public class Controller implements DeviceInterface {
 
     @Override
     public byte[] readInput() {
-        int size = (modules.length + 2) * 8;
+        if (USBController.isNull()) {
+            return new byte[1];
+        }
+        // 3 bytes per module or sizeof(hid_gamepad_report_t) from tinyusb's hid.h
+        int size = raw ? (modules.length + 2) * 3 : 12;
         USBController.initialize(size);
         if (!USBController.readBytes(size)) { // Quick and dirty for now
             System.out.println("Controller: readInput() failed.");
@@ -208,21 +222,24 @@ public class Controller implements DeviceInterface {
 
     @Override
     public boolean sendConfigs() {
+        if (USBController.isNull()) {
+            return false;
+        }
         byte[] command = {'S', 'A', 'V', 'E', 0}; // null-terminated "SAVE"
         USBController.initialize(command.length);
         boolean success = USBController.fillBuffer(command);
+        String data = fileWriter(-1);
         success = success && USBController.sendBuffer();
-        USBController.initialize( // For now: 3 mappings * (4 modules + 8 macros * (4 trigger length + 10 playback length) * (4 modules + 2 hardwired triggers))
-            (modules.length + mappings[curMapping].getMacroCount() *
-            (mappings[curMapping].getMacro(0, 0).getTriggerLength() + mappings[curMapping].getMacro(0, 0).getPlaybackLength()) *
-            (modules.length + 2)) * 3
-        );
-        success = success && USBController.fillBuffer(fileWriter(-1).getBytes(StandardCharsets.ISO_8859_1));
+        USBController.initialize(data.length());
+        success = success && USBController.fillBuffer(data.getBytes(StandardCharsets.ISO_8859_1));
         return success && USBController.sendBuffer();
     }
 
     @Override
     public boolean wipeMappings() {
+        if (USBController.isNull()) {
+            return false;
+        }
         byte[] command = {'W', 'I', 'P', 'E', 0}; // null-terminated "WIPE"
         USBController.initialize(command.length);
         boolean success = USBController.fillBuffer(command);
@@ -231,6 +248,9 @@ public class Controller implements DeviceInterface {
 
     @Override
     public byte[] runTests() {
+        if (USBController.isNull()) {
+            return new byte[1];
+        }
         byte[] command = {'T','E','S','T',0}; // null-terminated "TEST"
         USBController.initialize(command.length);
         boolean success = USBController.fillBuffer(command);
@@ -241,6 +261,36 @@ public class Controller implements DeviceInterface {
             System.out.println("Controller: runTests() failed.");
         }
         return USBController.retrieveBuffer();
+    }
+
+    @Override
+    public boolean rawInputMode() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'R', 'A', 'W', 0};
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        if (success) {
+            raw = true;
+        }
+        return success;
+    }
+
+    @Override
+    public boolean usbInputMode() {
+        if (USBController.isNull()) {
+            return false;
+        }
+        byte[] command = {'S', 'E', 'T', 'M', 'O', 'D', 'E', 'U', 'S', 'B', 0};
+        USBController.initialize(command.length);
+        boolean success = USBController.fillBuffer(command);
+        success = success && USBController.sendBuffer();
+        if (success) {
+            raw = false;
+        }
+        return success;
     }
 
     // Fixed module count functions (backwards-compatibility)

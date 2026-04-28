@@ -30,4 +30,10 @@ public interface DeviceInterface {
 
     // Runs hardware tests and displays output
     public byte[] runTests();
+
+    // Set the controller to send raw input buffer data
+    public boolean rawInputMode();
+
+    // Set the controller to send USB gamepad data
+    public boolean usbInputMode();
 }

@@ -1,6 +1,8 @@
 import com.fazecast.jSerialComm.SerialPort;
 
 import javax.swing.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
@@ -12,6 +14,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
     private Controller Pcontroller;
     private List<JComboBox<String>> dropdowns;
     private List<JTextArea> inputs;
+    private ButtonGroup deviceChoices = new ButtonGroup();
     public String version = "0.2.0";
 
     public WindowController(Controller controller){
@@ -48,7 +51,26 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         optionMenu.setMnemonic(KeyEvent.VK_O);
         menuBar.add(optionMenu);
         JMenu deviceMenu = new JMenu("Devices");
-        optionMenu.setMnemonic(KeyEvent.VK_D);
+        deviceMenu.setMnemonic(KeyEvent.VK_D);
+        deviceMenu.addMenuListener(new MenuListener() {
+            @Override
+            public void menuSelected(MenuEvent e) {
+                List<JRadioButtonMenuItem> devices = refreshDevices();
+                for (int i = 0; i < devices.size(); i++) {
+                    deviceMenu.add(devices.get(i));
+                }
+            }
+
+            @Override
+            public void menuDeselected(MenuEvent e) {
+                deviceMenu.removeAll();
+            }
+
+            @Override
+            public void menuCanceled(MenuEvent e) {
+                deviceMenu.removeAll();
+            }
+        });
         menuBar.add(deviceMenu);
         //menu bar sub items
         // FILE MENU SUB ITEMS
@@ -107,31 +129,7 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         JMenuItem aboutMenuItem = new JMenuItem("About");
         aboutMenuItem.addActionListener(e -> new aboutWindow(version));
         optionMenu.add(aboutMenuItem);
-        // DEVICE MENU SUB ITEMS
-        JMenuItem simToggle = new JMenuItem("Simulation");
-        simToggle.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Pcontroller.disconnect();
-                Pcontroller.setPort(null); // Internal behavior changes when Controller.port == null
-            }
-        });
-        deviceMenu.add(simToggle);
-        SerialPort[] ports = USBController.scan();
-        for (SerialPort port : ports) {
-            JMenuItem item = new JMenuItem(port.getDescriptivePortName());
-            item.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (Pcontroller.getPort() != null) {
-                        Pcontroller.disconnect();
-                    }
-                    Pcontroller.setPort(port);
-                    Pcontroller.connect(9600); // Can probably be higher, i.e. 115.2k
-                }
-            });
-            deviceMenu.add(item);
-        }
+
         setJMenuBar(menuBar);
         String[] modulesD1 = {" ","Joystick", "DPad", "ABXY"};
         //these are the dropdown boxes for the modules. they should all have the same implementation, just differing locations.
@@ -160,14 +158,11 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
                                 "Four general-purpose buttons intended to act as A, B, X, and/or Y."
                             );
                             break;
-                        case "":
+                        default:
                             Pcontroller.setComponent(iCopy, (byte) 'X');
                             Pcontroller.setModule(iCopy, 0, 0, "",
                                 "Unset or empty module."
                             );
-                            break;
-                        default:
-                            JOptionPane.showMessageDialog(controlPanel,"Invalid Selection", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             });
@@ -226,10 +221,10 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         contentPanel.add(module4);
         contentPanel.add(new JLabel());
         contentPanel.add(new JLabel()); // Row 3 of 200x200 panels
-        contentPanel.add(new JLabel());
         contentPanel.add(module2);
-        contentPanel.add(module3);
         contentPanel.add(new JLabel());
+        contentPanel.add(new JLabel());
+        contentPanel.add(module3);
         contentPanel.add(new JLabel());
         contentPanel.add(new JLabel()); // Row 4 exists
         modules.add(module1);
@@ -239,31 +234,42 @@ public class WindowController extends JFrame implements ViewInterface, Runnable{
         return modules;
     }
 
-    /*private void updateModules(List<JPanel> modules, byte[] components) {
-        for (int i = 0; i < modules.size(); i++) {
-            switch(components[i]) {
-                case 'J':
-                    modules.set(i, new AnalogStickPanel(12));
-                    break;
-                case 'B':
-                    JPanel module = new JPanel(new GridBagLayout());
-                    GridBagConstraints g = new GridBagConstraints();
-                    g.weightx = 1;
-                    g.weighty = 1;
-                    g.gridx = 1;
-                    g.gridy = 0;
-                    module.add(new JToggleButton("Up"), g);
-                    g.gridy = 2;
-                    module.add(new JToggleButton("Down"), g);
-                    g.gridx = 0;
-                    g.gridy = 1;
-                    module.add(new JToggleButton("Left"), g);
-                    g.gridx = 2;
-                    module.add(new JToggleButton("Right"), g);
-                    modules.set(i, module);
+    private List<JRadioButtonMenuItem> refreshDevices() {
+        List<JRadioButtonMenuItem> devices = new ArrayList<JRadioButtonMenuItem>();
+        deviceChoices = new ButtonGroup();
+
+        JRadioButtonMenuItem simToggle = new JRadioButtonMenuItem("Simulation");
+        simToggle.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Pcontroller.disconnect();
+                Pcontroller.setPort(null);
             }
+        });
+        simToggle.setSelected(true);
+        deviceChoices.add(simToggle);
+        devices.add(simToggle);
+
+        SerialPort[] ports = USBController.scan();
+        for (SerialPort port : ports) {
+            JRadioButtonMenuItem item = new JRadioButtonMenuItem(port.getDescriptivePortName());
+            item.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Pcontroller.disconnect();
+                    Pcontroller.setPort(port);
+                    Pcontroller.connect(115200);
+                }
+            });
+            if (Pcontroller.getPort() == port) {
+                item.setSelected(true);
+            }
+            deviceChoices.add(item);
+            devices.add(item);
         }
-    } // GUI is too finincky for me to update these on the fly, I have found */
+
+        return devices;
+    }
 
     public void setMapping(int ID, Mapping mapping) {
         int current = Pcontroller.getCurrentMapping();

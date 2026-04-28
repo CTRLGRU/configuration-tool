@@ -14,89 +14,81 @@ public class ButtonPanel extends JPanel {
         setPreferredSize(new Dimension(200, 200));
         setBackground(new Color(0, 0, 0, 0));
         final JButton upBtn = new JButton(topLabel);
+        upBtn.setContentAreaFilled(false);
+        upBtn.setOpaque(true);
+        upBtn.setBackground(Color.LIGHT_GRAY);
         upBtn.addMouseListener(new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mouseClicked(MouseEvent e) { // Arm on left-click or toggle on right-click
-                if (e.getButton() == MouseEvent.BUTTON1) {
-                    upBtn.getModel().setArmed(true);
-                    up = true;
-                } else if (e.getButton() == MouseEvent.BUTTON2) {
-                    upBtn.getModel().setArmed(!upBtn.getModel().isArmed());
-                    up = !up;
-                }
+            public void mousePressed(MouseEvent e) { // Press on any click
+                upBtn.setBackground(new Color(0, 191, 31));
+                up = true;
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release only
-                    upBtn.getModel().setArmed(false);
+                    upBtn.setBackground(Color.LIGHT_GRAY);
                     up = false;
                 }
             }
         });
         final JButton leftBtn = new JButton(leftLabel);
+        leftBtn.setContentAreaFilled(false);
+        leftBtn.setOpaque(true);
+        leftBtn.setBackground(Color.LIGHT_GRAY);
         leftBtn.addMouseListener(new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mouseClicked(MouseEvent e) { // Arm on left-click or toggle on right-click
-                if (e.getButton() == MouseEvent.BUTTON1) {
-                    leftBtn.getModel().setArmed(true);
-                    left = true;
-                } else if (e.getButton() == MouseEvent.BUTTON2) {
-                    leftBtn.getModel().setArmed(!leftBtn.getModel().isArmed());
-                    left = !left;
-                }
+            public void mousePressed(MouseEvent e) { // Press on any click
+                leftBtn.setBackground(new Color(0, 191, 31));
+                left = true;
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release only
-                    leftBtn.getModel().setArmed(false);
+                    leftBtn.setBackground(Color.LIGHT_GRAY);
                     left = false;
                 }
             }
         });
         final JButton rightBtn = new JButton(rightLabel);
+        rightBtn.setContentAreaFilled(false);
+        rightBtn.setOpaque(true);
+        rightBtn.setBackground(Color.LIGHT_GRAY);
         rightBtn.addMouseListener(new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mouseClicked(MouseEvent e) { // Arm on left-click or toggle on right-click
-                if (e.getButton() == MouseEvent.BUTTON1) {
-                    rightBtn.getModel().setArmed(true);
-                    right = true;
-                } else if (e.getButton() == MouseEvent.BUTTON2) {
-                    rightBtn.getModel().setArmed(!rightBtn.getModel().isArmed());
-                    right = !right;
-                }
+            public void mousePressed(MouseEvent e) { // Press on any click
+                rightBtn.setBackground(new Color(0, 191, 31));
+                right = true;
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release only
-                    rightBtn.getModel().setArmed(false);
+                    rightBtn.setBackground(Color.LIGHT_GRAY);
                     right = false;
                 }
             }
         });
         final JButton downBtn = new JButton(bottomLabel);
+        downBtn.setContentAreaFilled(false);
+        downBtn.setOpaque(true);
+        downBtn.setBackground(Color.LIGHT_GRAY);
         downBtn.addMouseListener(new MouseAdapter() {
             // MouseListener events
             @Override
-            public void mouseClicked(MouseEvent e) { // Arm on left-click or toggle on right-click
-                if (e.getButton() == MouseEvent.BUTTON1) {
-                    downBtn.getModel().setArmed(true);
-                    down = true;
-                } else if (e.getButton() == MouseEvent.BUTTON2) {
-                    downBtn.getModel().setArmed(!downBtn.getModel().isArmed());
-                    down = !down;
-                }
+            public void mousePressed(MouseEvent e) { // Press on any click
+                downBtn.setBackground(new Color(0, 191, 31));
+                down = true;
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) { // Disarm on left-click release only
-                    downBtn.getModel().setArmed(false);
+                    downBtn.setBackground(Color.LIGHT_GRAY);
                     down = false;
                 }
             }

@@ -7,6 +7,7 @@ public class AnalogStickPanel extends JPanel {
     private int x;
     private int y;
     private final int r;
+    private boolean lDown = false;
 
     public AnalogStickPanel(int radius) {
         x = 0;
@@ -14,7 +15,7 @@ public class AnalogStickPanel extends JPanel {
         r = radius;
         setFocusable(true);
         setPreferredSize(new Dimension(200, 200));
-        setBackground(new Color(0, 0, 0, 0));
+        setOpaque(false);
         MouseAdapter mouse = new MouseAdapter() {
             // MouseListener events
             @Override
@@ -32,17 +33,19 @@ public class AnalogStickPanel extends JPanel {
             // MouseMotionListener events
             @Override
             public void mouseDragged(MouseEvent e) { // Left-click dragging sets it
-                if (e.getButton() == MouseEvent.BUTTON1) {
-                    setStick(e.getX(), e.getY());
-                }
+                setStick(e.getX(), e.getY());
             }
         };
         addMouseMotionListener(mouse);
         addMouseListener(mouse);
     }
 
-    public int getX() {
+    public int getStickX() {
         return x;
+    }
+
+    public int getStickY() {
+        return y;
     }
 
     public int getXAsOutput(byte bits) {
@@ -51,10 +54,6 @@ public class AnalogStickPanel extends JPanel {
         }
         int max = (int) (Math.pow(2, bits)) - 1;
         return (int) (max * x / getMaxDistance());
-    }
-
-    public int getY() {
-        return y;
     }
 
     public int getYAsOutput(byte bits) {
@@ -66,18 +65,16 @@ public class AnalogStickPanel extends JPanel {
     }
 
     public double getDistance() {
-        int dx = x - getWidth() / 2;
-        int dy = y - getHeight() / 2;
-        return Math.sqrt(dx * dx + dy * dy);
+        return Math.sqrt(x * x + y * y);
     }
 
     public double getMaxDistance() {
-        return getWidth() - r; // All the way to one side
+        return Math.min(getWidth(), getHeight()) / 2.0 - r; // All the way to one side
     }
 
     public void setStick(int xStick, int yStick) {
         x = xStick - getWidth() / 2; // Negative to the left, positive to the right
-        y = getHeight() / 2 - yStick; // Negative to the bottom, positive to the top
+        y = yStick - getHeight() / 2; // Negative to the bottom, positive to the top
         double scale = getMaxDistance() / getDistance();
         if (scale < 1) { // Scale if beyond regular bounds
             x = (int) (x * scale);

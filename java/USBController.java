@@ -5,6 +5,9 @@ public abstract class USBController {
     private static byte[] buffer;
 
     public static boolean close() {
+        if (isNull()) {
+            return true;
+        }
         return port.closePort();
     }
 
@@ -20,6 +23,10 @@ public abstract class USBController {
 
     public static void initialize(int bufferSize) {
         buffer = new byte[bufferSize];
+    }
+
+    public static boolean isNull() {
+        return port == null;
     }
 
     public static boolean open(String name, int baud, int stopBits, int parity) {
@@ -65,7 +72,7 @@ public abstract class USBController {
     }
 
     public static boolean sendBuffer() {
-        if (port == null || !port.isOpen()) {
+        if (isNull() || !port.isOpen()) {
             return false;
         }
         return buffer.length == port.writeBytes(buffer, buffer.length);
